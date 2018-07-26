@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lyrics>
+<directory>
+<name>test</name>
+<artist>Talking Heads</artist><album>Fear Of Music</album>
+<files>
+<file><name>test1.flac</name><lyric><![CDATA[
+Line 1 Lyrics for test 1
+Line 2 Lyrics for test 1
+Line 3 Lyrics for test 1
+Line 4 Lyrics for test 1
+Line 5 Lyrics for test 1
+Line 6 Lyrics for test 1
+]]></lyric>
+</file>
+<file><name>test2.flac</name><lyric><![CDATA[
+Line 1 Lyrics for test 2
+Line 2 Lyrics for test 2
+Line 3 Lyrics for test 2
+Line 4 Lyrics for test 2
+Line 5 Lyrics for test 2
+Line 6 Lyrics for test 2
+]]></lyric>
+</file>
+<file><name>test3.flac</name><lyric><![CDATA[Line 1 Lyrics for test 3
+Line 2 Lyrics for test 3
+Line 3 Lyrics for test 3
+Line 4 Lyrics for test 3
+Line 5 Lyrics for test 3
+Line 6 Lyrics for test 3
+]]></lyric>
+</file>
+</files>
+</directory>
+</lyrics>

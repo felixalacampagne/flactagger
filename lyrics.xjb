@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jxb:bindings xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+            jxb:version="1.0"> 
+<jxb:bindings   schemaLocation="lyrics.xsd">
+<jxb:schemaBindings>
+      <jxb:package name="com.smallcatutilities.flactagger.generated.lyrics" ></jxb:package>
+</jxb:schemaBindings> 
+</jxb:bindings>
+</jxb:bindings>
