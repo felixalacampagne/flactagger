@@ -1,20 +1,27 @@
 package com.smallcatutilities.flactagger;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Iterator;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
+
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagField;
@@ -25,6 +32,7 @@ import com.smallcatutilities.flactagger.generated.lyrics.DirectoryType;
 import com.smallcatutilities.flactagger.generated.lyrics.FileType;
 import com.smallcatutilities.flactagger.generated.lyrics.FilesType;
 import com.smallcatutilities.flactagger.generated.lyrics.LyricsType;
+import com.smallcatutilities.flactagger.generated.lyrics.ObjectFactory;
 import com.smallcatutilities.utils.CmdArgMgr;
 
 public class FLACtagger
@@ -61,7 +69,7 @@ private static final String FLAC_LYRICS_TAG="UNSYNCED LYRICS";
 			}
 			else if(cmds.getArg("x") != null)
 			{
-				System.out.println("Extract not implemented yet!");
+				tagger.extract(lyricsxml);
 			}
 		}
 		catch (Exception e)
@@ -74,6 +82,7 @@ private static final String FLAC_LYRICS_TAG="UNSYNCED LYRICS";
 
 	
 private final String rootDir;
+private final ObjectFactory objFact = new ObjectFactory();
 	public FLACtagger()
 	{
 		this(null);
@@ -85,6 +94,154 @@ private final String rootDir;
 		else
 			rootDir = root;
 	}
+	
+	
+	public int extract(String lyricsxml) throws Exception
+	{
+	LyricsType lyrics =  objFact.createLyricsType();
+	File root = new File(rootDir);
+		// Dont want a real recurse search, only the current directory if it containts flacs or
+		// the sub-directories of the current directory if there are no flacs.
+		
+		// extract flacs in rootDir
+		if(extractFiles(root, lyrics) == 0)
+		{
+			for(File subdir : getDirs(root))
+			{
+				extractFiles(subdir, lyrics);
+			}
+		}
+		
+		// marshal the lyric object
+		// save XML to lyricsxml as UTF-8
+		saveLyrics(lyricsxml, lyrics);
+		return 0;
+	}
+	
+	// returns empty list if no dirs found
+	public List<File> getDirs(File root)
+	{
+		List<File> subdirs = new ArrayList<File>(); 
+		File [] files =
+			root.listFiles(new FileFilter(){
+				@Override
+				public boolean accept(File pathname) {
+					return pathname.isDirectory();
+				}
+			});
+		if(files != null)
+		{
+			Arrays.sort(files);
+			subdirs.addAll(Arrays.asList(files));
+		}
+		return subdirs;
+	}
+	
+	public int extractFiles(File dir, LyricsType lyrics)
+	{
+	int flaccnt = 0;
+	
+		if((lyrics == null) || (lyrics.getDirectory() == null))
+			return flaccnt;
+	
+	List<File> flacs = getFiles(dir);
+	DirectoryType d = null;
+	List<FileType> files = null;
+		for(File f : flacs)
+		{
+			FileTypeEx ft = getFile(f);
+			if(ft != null)
+			{
+				if(d == null)
+				{
+					d = objFact.createDirectoryType();
+					d.setArtist(ft.getArtist());
+					d.setAlbum(ft.getAlbum());
+					d.setName(dir.getName());
+					d.setFiles(objFact.createFilesType());
+					files = d.getFiles().getFile();
+				}
+				files.add(ft);
+				flaccnt++;
+			}
+		}
+		if(d != null) 
+		{
+			lyrics.getDirectory().add(d);
+		}
+		return flaccnt;
+	}
+	
+	// TODO: Artist and album should be per file instead of per directory to accommodate compilations
+	public FileTypeEx getFile(File f)
+	{
+	FileTypeEx ftx = null;
+		System.out.println("INFO: Loading: " + f.getName());
+		try 
+		{
+			AudioFile af = AudioFileIO.read(f);
+			Tag tag = af.getTag();
+			
+			// Artist, album, lyric, directory name, file name
+			ftx = new FileTypeEx();
+			ftx.setName(f.getName());
+			ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
+			ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
+			String lyric = tag.getFirst(FLAC_LYRICS_TAG);
+			if(lyric != null)
+			{
+				// Leaving the CRLF in results lines terminated with "&#xD;" and a normal linefeed
+				// Seems the Java XML parse is stuck in the Unix world. There might be a way to
+				// tell the parse to treat the data verbatim (I thought that is what CDATA meant) but
+				// don't know whether that must be in the schema or the xjb or what at the moment
+				lyric = lyric.replace("\r","");
+				
+				// make it easier to edit the lyric ensure start and end lyric tags are not on the same line as the content
+				if(!lyric.startsWith("\n"))
+					lyric = "\n" + lyric;
+				if(!lyric.endsWith("\n"))
+					lyric = lyric + "\n";
+			}
+			else
+			{
+				lyric = "";
+			}
+			ftx.setLyric(lyric);
+		} 
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		} 
+		return ftx;
+	}
+	
+	public List<File> getFiles(File dir)
+	{
+	List<File> files = new ArrayList<File>();
+		if(dir == null)
+		{
+			return files;
+		}
+		
+		if(!dir.isDirectory())
+			return files;
+		
+		files.addAll(Arrays.asList(dir.listFiles(
+			new FileFilter()
+			{
+				@Override
+				public boolean accept(File pathname) {
+					if(pathname.isDirectory())
+						return false;
+					String name = pathname.getName();
+					boolean rc = name.matches("(?i)^.*\\.flac$"); 
+					return rc;
+				}
+			})));
+
+		return files;
+	}
+	
 	
 	
 	public int update(String lyricsxml) throws Exception
@@ -164,5 +321,16 @@ private final String rootDir;
 		JAXBElement<LyricsType> o = u.unmarshal(new StreamSource(new FileInputStream(lyricsxml)), LyricsType.class);
 		LyricsType lyrics = o.getValue();
 		return lyrics;
+	}
+	
+	private void saveLyrics(String lyricsxml, LyricsType lyrics) throws JAXBException, FileNotFoundException
+	{
+		// Arg for JAXBContext is the package containing the ObjectFactory for the type to be Un/Marshalled
+		String ctxname = LyricsType.class.getPackage().getName();
+		JAXBContext jc = JAXBContext.newInstance(ctxname);	
+		Marshaller m = jc.createMarshaller();
+		
+		JAXBElement<LyricsType> o = objFact.createLyrics(lyrics);
+		m.marshal(o, new FileOutputStream(lyricsxml));
 	}
 }
