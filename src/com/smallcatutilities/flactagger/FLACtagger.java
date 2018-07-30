@@ -328,7 +328,8 @@ private final ObjectFactory objFact = new ObjectFactory();
 	}
 	private FlacTags loadLyrics(String lyricsxml) throws JAXBException, FileNotFoundException
 	{
-		JAXBContext jc = JAXBContext.newInstance( "com.smallcatutilities.flactagger.generated.lyrics" );
+		String ctxname = FlacTags.class.getPackage().getName();
+		JAXBContext jc = JAXBContext.newInstance(ctxname);
 		Unmarshaller u = jc.createUnmarshaller(); 
 		JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(new FileInputStream(lyricsxml)), FlacTags.class);
 		FlacTags lyrics = o.getValue();

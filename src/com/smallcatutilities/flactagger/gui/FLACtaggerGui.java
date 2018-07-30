@@ -12,6 +12,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -339,7 +341,7 @@ WindowAdapter exitEvent = new WindowAdapter() {
 
 	public static void main(String[] args)
 	{
-		// TODO Auto-generated method stub
+		Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
 		FLACtaggerGui gui = new FLACtaggerGui();
 	}
 
