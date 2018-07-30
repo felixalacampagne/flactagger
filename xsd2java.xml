@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="flactagger" default="generate" basedir=".">
+
+	<property name="srcdir" value="${basedir}/src" />
+   <property name="lyrics.schema"   value="${basedir}/lyrics.xsd" />
+   <property name="lyrics.bindings" value="${basedir}/lyrics.xjb" />
+   <property name="flactags.schema"   value="${basedir}/flactags.xsd" />
+   <property name="flactags.bindings" value="${basedir}/flactags.xjb" />
+
+<!-- Appears there is no "official" ant task for doing "xjc". There was an ant task included in the old jaxws-jaxb library 
+     which was used before JAXB became part of standard Java. Unfortunately the tools part of jaxb was not included.
+     The XJCFacade class is in the tools.jar of the JDK. It's not documented by appears to require the same parameters
+     as the xjc.exe
+ -->
+<!-- lyrics.xsd -b lyrics.xjb -d src -->
+<macrodef name="xjc">
+   <attribute name="schema" default=""/>
+   <attribute name="xjb"    default=""/>
+   <attribute name="dest"    default=""/>
+	<sequential>
+   <java classname="com.sun.tools.internal.xjc.XJCFacade">
+      <arg value="@{schema}" />
+      <arg value="-b" />
+      <arg value="@{xjb}" />
+      <arg value="-d" />
+      <arg value="@{dest}" />
+   </java>
+	</sequential>
+</macrodef>
+
+<target name="generate.lyrics">
+   <xjc schema="${lyrics.schema}" 
+        xjb="${lyrics.bindings}"
+        dest="${srcdir}"/>
+</target>
+	
+<target name="generate">
+   <xjc schema="${flactags.schema}" xjb="${flactags.bindings}" dest="${srcdir}"/>
+</target>
+	
+</project>
