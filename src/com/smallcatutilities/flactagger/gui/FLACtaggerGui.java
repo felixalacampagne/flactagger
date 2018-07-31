@@ -1,16 +1,17 @@
 package com.smallcatutilities.flactagger.gui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +22,9 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -34,6 +37,7 @@ public class FLACtaggerGui
 private static final String PROP_FILE = "flactagger.properties";
 private static final String PROP_ROOTDIR = "flactagger.rootdir";
 private static final String PROP_TAGFILE = "flactagger.tagfile";
+private static final String PROP_LOCATION = "flactagger.location";
 private JFrame mainframe;
 private JTextField txtRootDir;
 private JTextField txtFlacTagsFile;
@@ -60,10 +64,19 @@ private ActionListener extractAction = new ActionListener(){
 
 
 WindowAdapter exitEvent = new WindowAdapter() {
-    @Override
-    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-   	 saveSettings();
-   	 System.exit(0);
+   @Override
+   public void windowClosing(java.awt.event.WindowEvent windowEvent) 
+   {
+   	try
+   	{
+   	Point p = mainframe.getLocation();
+   	String loc = String.format("%d,%d", (int) p.getX(), (int)p.getY()); 
+   	settings.setProperty(PROP_LOCATION, loc);
+   	 
+   	saveSettings();
+   	}
+   	catch(Exception ex) {} // We are exiting, ensure nothing gets in the way
+   	System.exit(0);
     }
 };
 
@@ -83,17 +96,46 @@ WindowAdapter exitEvent = new WindowAdapter() {
 		
 	}
 
+	protected void popupBox(String title, String msg, int status)
+	{
+	JTextArea tb = new JTextArea();
+	JPanel pnl = new JPanel();
+	JLabel lbl = new JLabel();
+		
+		lbl.setText(title);
+		tb.setText(msg);
+		pnl.setLayout(new BorderLayout());
+		pnl.add(lbl, BorderLayout.NORTH);
+		pnl.add(tb, BorderLayout.CENTER);
+		
+		JOptionPane.showMessageDialog(mainframe, pnl, "FLACtagger", status);
+		
+	}
+	
 	protected void doExtract()
 	{
 	String rd = this.getRootDir();
 	FLACtagger taggr = new FLACtagger(rd);
+	CaptureLog cl = new CaptureLog();
+		Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
 		try
 		{
-			taggr.extract(this.getFlactagFile());
+			if(taggr.extract(this.getFlactagFile()) != 0)
+			{
+				popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+			}
+			else
+			{
+				popupBox("Extraction done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
+			}
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+		}
+		finally
+		{
+			Logger.getGlobal().removeHandler(cl);
 		}
 	}
 
@@ -101,14 +143,29 @@ WindowAdapter exitEvent = new WindowAdapter() {
 	{
 	String rd = this.getRootDir();
 	FLACtagger taggr = new FLACtagger(rd);
+
+	CaptureLog cl = new CaptureLog();
+	Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
+
 		try
 		{
-			taggr.update(this.getFlactagFile());
-			
+			if( taggr.update(this.getFlactagFile()) != 0)
+			{
+				popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+			}
+			else
+			{
+				popupBox("Update done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
+			}
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
+			popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+		}
+		finally
+		{
+			Logger.getGlobal().removeHandler(cl);
 		}
 	
 	}
@@ -306,6 +363,15 @@ WindowAdapter exitEvent = new WindowAdapter() {
       mainframe.pack();
       mainframe.setVisible(true);
       loadSettings();
+      try
+      {
+      	String lcn[] = settings.getProperty(PROP_LOCATION, "100,50").split(",");
+      	mainframe.setLocation(Integer.parseInt(lcn[0]),Integer.parseInt(lcn[1]));
+      }
+      catch(Exception ex)
+      {
+      	// ignore this
+      }
 	}
 	
 	private void saveSettings()

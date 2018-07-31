@@ -5,7 +5,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +27,7 @@ import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagField;
 import org.jaudiotagger.tag.flac.FlacTag;
 import org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField;
+import org.kc7bfi.jflac.FLACDecoder;
 
 import com.smallcatutilities.flactagger.generated.flactags.Directory;
 import com.smallcatutilities.flactagger.generated.flactags.FileList;
@@ -39,6 +40,7 @@ public class FLACtagger
 {
 private static final String USAGE="Usage: FLACtagger <-u|-x> <-l lyrics.xml> [-r FLAC file rootdir]";
 private static final String FLAC_LYRICS_TAG="UNSYNCED LYRICS";
+private static final Logger log = Logger.getLogger(FLACtagger.class.getName());
 	public static void main(String[] args)
 	{
 	FLACtagger tagger = null;
@@ -149,7 +151,7 @@ private final ObjectFactory objFact = new ObjectFactory();
 	List<FileMetadata> files = null;
 		for(File f : flacs)
 		{
-			FileMetadata ft = getFile(f);
+			FileMetadata ft = getFileMetadata(f);
 			if(ft != null)
 			{
 				if(d == null)
@@ -171,10 +173,10 @@ private final ObjectFactory objFact = new ObjectFactory();
 	}
 	
 	// TODO: Artist and album should be per file instead of per directory to accommodate compilations
-	public FileMetadata getFile(File f)
+	public FileMetadata getFileMetadata(File f)
 	{
 		FileMetadata ftx = null;
-		System.out.println("INFO: Loading: " + f.getName());
+		log.info("Loading: " + f.getName());
 		try 
 		{
 			AudioFile af = AudioFileIO.read(f);
@@ -224,6 +226,9 @@ private final ObjectFactory objFact = new ObjectFactory();
 		{
 			e.printStackTrace();
 		} 
+		
+		log.info("MD5:" + getAudioDigest(f) + "*" + f.getName());
+		
 		return ftx;
 	}
 	
@@ -262,7 +267,7 @@ private final ObjectFactory objFact = new ObjectFactory();
 	
 		if(lyrics == null)
 		{
-			System.out.println("No Lyrics loaded from " + lyricsxml + "!");
+			log.severe("No Lyrics loaded from " + lyricsxml + "!");
 			return 1;
 		}
 	
@@ -271,10 +276,10 @@ private final ObjectFactory objFact = new ObjectFactory();
 			File dir = new File(rootDir, d.getName());
 			if(!dir.exists())
 			{
-				System.out.println("WARN:  Directory not found: " + dir.getAbsolutePath());
+				log.severe("Directory not found: " + dir.getAbsolutePath());
 				continue;
 			}
-			System.out.println("INFO: Processing Directory: " + d.getName());
+			log.info("Processing Directory: " + d.getName());
 
 			FileList files = d.getFiles();
 			for(FileMetadata ft : files.getList())
@@ -292,7 +297,7 @@ private final ObjectFactory objFact = new ObjectFactory();
 				// unless ? means 0 or 1... it does!
 				trimlyric = trimlyric.replaceAll("\r?\n", "\r\n");
 				File f = new File(dir, ft.getName());
-				System.out.println("INFO: Loading: " + ft.getName());
+				log.info("Loading: " + ft.getName());
 				AudioFile af = AudioFileIO.read(f);
 				
 				Tag tag = af.getTag();
@@ -303,23 +308,23 @@ private final ObjectFactory objFact = new ObjectFactory();
 						String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
 						if(trimlyric.equals(currlyric))
 						{
-							System.out.println("INFO: Lyric is already present, no update required: "+ ft.getName());
+							log.info("Lyric is already present, no update required: "+ ft.getName());
 							continue;
 						}
 						//System.out.println("INFO: Removing existing lyric from "+ ft.getName() + ":\n" + currlyric);
-						System.out.println("INFO: Removing existing lyric from "+ ft.getName());
+						log.info("Removing existing lyric from "+ ft.getName());
 						tag.deleteField(FLAC_LYRICS_TAG);
 					}
 					// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
 					TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
 					tag.addField(lyrictf);
-					System.out.println("INFO: updating: " + ft.getName());
+					log.info("INFO: updating: " + ft.getName());
 					//System.out.println("DBUG: " + trimlyric);
 					af.commit();
 				}
 				else
 				{
-					System.out.println("WARN: No or none-FLAC tag, unable to update: " + ft.getName());
+					log.severe("WARN: No or none-FLAC tag, unable to update: " + ft.getName());
 				}
 			}
 		}
@@ -345,5 +350,21 @@ private final ObjectFactory objFact = new ObjectFactory();
 		
 		JAXBElement<FlacTags> o = objFact.createFlactags(lyrics);
 		m.marshal(o, new FileOutputStream(lyricsxml));
+	}
+	
+	public String getAudioDigest(File flacfile)
+	{
+		FLACdigester fd = new FLACdigester();
+		String dig = null; 
+		try
+		{
+			dig = fd.getAudioDigest(flacfile);
+		}
+		catch (IOException e)
+		{
+			log.log(Level.SEVERE, "Failed to calculate digest for " + flacfile.getName(), e);
+		}
+		return dig;
+     
 	}
 }
