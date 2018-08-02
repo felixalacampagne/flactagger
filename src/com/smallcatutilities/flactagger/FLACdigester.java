@@ -32,12 +32,7 @@ public class FLACdigester implements PCMProcessor
           // Incredibly there isn't a simple way to get the string representation of the MD5
           // Needless to say there a billion and one wierd ways of doing it according to Google
           // but i'll stick with the simplest I can think of.
-          StringBuffer sb = new StringBuffer();
-          for (byte b : mdbytes) 
-          {
-   			sb.append(String.format("%02x", b & 0xff));
-          }          
-          txtmd = sb.toString();
+          txtmd = bytesToHex(mdbytes);
       }
       finally
       {
@@ -54,7 +49,7 @@ public class FLACdigester implements PCMProcessor
 	}
 
 	@Override
-	public void processStreamInfo(StreamInfo arg0)
+	public void processStreamInfo(StreamInfo si)
 	{
 		// This is called at the start
 		try
@@ -67,5 +62,15 @@ public class FLACdigester implements PCMProcessor
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public String bytesToHex(byte[] bs)
+	{
+        StringBuffer sb = new StringBuffer();
+        for (byte b : bs) 
+        {
+ 			sb.append(String.format("%02x", b & 0xff));
+        }          
+        return sb.toString();
 	}
 }

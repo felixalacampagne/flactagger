@@ -24,6 +24,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -43,6 +44,7 @@ private JTextField txtRootDir;
 private JTextField txtFlacTagsFile;
 private JButton btnExtract;
 private JButton btnUpdate;
+private JTextArea logdisplay;
 
 private Properties settings = new Properties();
 
@@ -98,74 +100,97 @@ WindowAdapter exitEvent = new WindowAdapter() {
 
 	protected void popupBox(String title, String msg, int status)
 	{
-	JTextArea tb = new JTextArea();
+		JLabel tb = new JLabel();
 	JPanel pnl = new JPanel();
 	JLabel lbl = new JLabel();
-		
+			
 		lbl.setText(title);
-		tb.setText(msg);
+		tb.setText(msg); // this is OK for small amount of text - not so good when there is alot, needs scrollbars...
+		
+		
+		//JScrollPane	scp = new JScrollPane(tb,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		//scp.setMaximumSize(new Dimension(400,300));
+		//scp.setPreferredSize(scp.getMaximumSize());
 		pnl.setLayout(new BorderLayout());
 		pnl.add(lbl, BorderLayout.NORTH);
+		//pnl.add(scp, BorderLayout.CENTER);
 		pnl.add(tb, BorderLayout.CENTER);
 		
 		JOptionPane.showMessageDialog(mainframe, pnl, "FLACtagger", status);
 		
+	}
+	protected void popupBox(String msg, int status)
+	{
+		JOptionPane.showMessageDialog(mainframe, msg, "FLACtagger", status);
 	}
 	
 	protected void doExtract()
 	{
 	String rd = this.getRootDir();
 	FLACtagger taggr = new FLACtagger(rd);
-	CaptureLog cl = new CaptureLog();
-		Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
+	//CaptureLog cl = new CaptureLog();
+	//	Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
+	logdisplay.setText("");
 		try
 		{
+			// TODO this should really be done as a separate thread or maybe SwingWorker or maybe invokeLater
+			// with some sort of mechanism to be alerted to new text to be displayed
+			// and a way to detect when it's finished... but it works more or less like it is!!
 			if(taggr.extract(this.getFlactagFile()) != 0)
 			{
-				popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+				//popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+				popupBox("Extraction failed!", JOptionPane.ERROR_MESSAGE);
 			}
 			else
 			{
-				popupBox("Extraction done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
+				//popupBox("Extraction done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
+				popupBox("Extraction done!", JOptionPane.INFORMATION_MESSAGE);
 			}
 		}
 		catch (Exception e)
 		{
-			popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+			//popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+			popupBox("Exception during extraction!", JOptionPane.ERROR_MESSAGE);
 		}
-		finally
-		{
-			Logger.getGlobal().removeHandler(cl);
-		}
+		//finally
+		//{
+		//	Logger.getGlobal().removeHandler(cl);
+		//}
 	}
 
 	protected void doUpdate()
 	{
 	String rd = this.getRootDir();
 	FLACtagger taggr = new FLACtagger(rd);
-
-	CaptureLog cl = new CaptureLog();
-	Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
+	logdisplay.setText("");
+	//CaptureLog cl = new CaptureLog();
+	//Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
 
 		try
 		{
+			// TODO this should really be done as a separate thread or maybe SwingWorker or maybe invokeLater
+			// with some sort of mechanism to be alerted to new text to be displayed
+			// and a way to detect when it's finished... but it works more or less like it is!!
 			if( taggr.update(this.getFlactagFile()) != 0)
 			{
-				popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+				//popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+				popupBox("Update failed!", JOptionPane.ERROR_MESSAGE);
 			}
 			else
 			{
-				popupBox("Update done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
+				//popupBox("Update done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
+				popupBox("Update done!", JOptionPane.INFORMATION_MESSAGE);
 			}
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+			//popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
+			popupBox("Exception during update", JOptionPane.ERROR_MESSAGE);
 		}
 		finally
 		{
-			Logger.getGlobal().removeHandler(cl);
+			//Logger.getGlobal().removeHandler(cl);
 		}
 	
 	}
@@ -211,10 +236,10 @@ WindowAdapter exitEvent = new WindowAdapter() {
       BoxLayout bl;
 
       
-		mainframe = new JFrame("FLACtagger");
+      mainframe = new JFrame("FLACtagger");
       mainframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
       mainframe.addWindowListener(exitEvent);
-      mainframe.getContentPane().setPreferredSize(new Dimension(400, 100));
+      mainframe.getContentPane().setPreferredSize(new Dimension(450, 400));
       mainframe.getContentPane().setLayout(new BoxLayout(mainframe.getContentPane(), BoxLayout.Y_AXIS));
       
       mainframe.setResizable(false);
@@ -340,8 +365,17 @@ WindowAdapter exitEvent = new WindowAdapter() {
       
       mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
 
-      
-      
+      pnl = new JPanel(); 
+      logdisplay = new JTextArea();
+		JScrollPane	scp = new JScrollPane(logdisplay,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scp.setMaximumSize(new Dimension(400,300));
+		scp.setPreferredSize(scp.getMaximumSize());
+		pnl.setLayout(new BorderLayout());
+		pnl.add(scp, BorderLayout.CENTER);
+		mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
+		
+		CaptureLog cl = new CaptureLog(logdisplay);
+		Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);	
       //GroupLayout layout = new GroupLayout(mainframe.getContentPane()); 
       //layout.setHorizontalGroup(
       //		layout.createSequentialGroup()

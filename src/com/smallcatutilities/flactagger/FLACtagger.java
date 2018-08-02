@@ -27,7 +27,6 @@ import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagField;
 import org.jaudiotagger.tag.flac.FlacTag;
 import org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField;
-import org.kc7bfi.jflac.FLACDecoder;
 
 import com.smallcatutilities.flactagger.generated.flactags.Directory;
 import com.smallcatutilities.flactagger.generated.flactags.FileList;
@@ -227,7 +226,11 @@ private final ObjectFactory objFact = new ObjectFactory();
 			e.printStackTrace();
 		} 
 		
-		log.info("MD5:" + getAudioDigest(f) + "*" + f.getName());
+		String md5dig = getAudioDigest(f);
+		if((md5dig != null) && (md5dig.length()>0))
+		{
+			log.info("MD5:" + getAudioDigest(f) + "*" + f.getName());
+		}
 		
 		return ftx;
 	}
@@ -352,10 +355,14 @@ private final ObjectFactory objFact = new ObjectFactory();
 		m.marshal(o, new FileOutputStream(lyricsxml));
 	}
 	
+	@SuppressWarnings("unused")
 	public String getAudioDigest(File flacfile)
 	{
+		String dig = null;
 		FLACdigester fd = new FLACdigester();
-		String dig = null; 
+
+		if(0==1)
+		{
 		try
 		{
 			dig = fd.getAudioDigest(flacfile);
@@ -363,6 +370,7 @@ private final ObjectFactory objFact = new ObjectFactory();
 		catch (IOException e)
 		{
 			log.log(Level.SEVERE, "Failed to calculate digest for " + flacfile.getName(), e);
+		}
 		}
 		return dig;
      

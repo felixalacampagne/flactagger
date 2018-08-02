@@ -3,5 +3,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="META-INF/" kind="src" path="jaudiotagger-2.2.6-SNAPSHOT-sources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/JustFLAC.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

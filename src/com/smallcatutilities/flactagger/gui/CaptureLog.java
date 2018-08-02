@@ -11,15 +11,19 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
+import javax.swing.text.BadLocationException;
+import javax.swing.text.JTextComponent;
+
 public class CaptureLog extends StreamHandler
 {
 
 private final ByteArrayOutputStream bstream = new ByteArrayOutputStream();
 private final CaptureLogFormatter fmt = new CaptureLogFormatter();
-
-	public CaptureLog()
+private final JTextComponent logdisplayer;
+	public CaptureLog(JTextComponent display)
 	{
 		super();
+		logdisplayer = display;
 		this.setOutputStream(bstream);
 		this.setLevel(Level.INFO);
 		fmt.setFormat("%4$s: %5$s%6$s%n");
@@ -32,6 +36,24 @@ private final CaptureLogFormatter fmt = new CaptureLogFormatter();
 		return bstream.toString();
 	}
 	
+	public void publish(LogRecord record) 
+	{
+		bstream.reset();
+		super.publish(record);
+		flush();
+		if(bstream.size() > 0)
+		{
+			try {
+				logdisplayer.getDocument().insertString(logdisplayer.getDocument().getLength(), bstream.toString(), null);
+				logdisplayer.update(logdisplayer.getGraphics());
+				logdisplayer.setCaretPosition(logdisplayer.getText().length() - 1);
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// TODO If anything was written then add it to the related component
+	}
 	
 	class CaptureLogFormatter extends SimpleFormatter 
 	{
