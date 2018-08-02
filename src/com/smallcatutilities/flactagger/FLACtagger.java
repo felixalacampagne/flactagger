@@ -301,34 +301,41 @@ private final ObjectFactory objFact = new ObjectFactory();
 				trimlyric = trimlyric.replaceAll("\r?\n", "\r\n");
 				File f = new File(dir, ft.getName());
 				log.info("Loading: " + ft.getName());
+				try
+				{
 				AudioFile af = AudioFileIO.read(f);
 				
-				Tag tag = af.getTag();
-				if((tag != null) && (tag instanceof FlacTag ))
-				{
-					if(tag.hasField(FLAC_LYRICS_TAG))
+					Tag tag = af.getTag();
+					if((tag != null) && (tag instanceof FlacTag ))
 					{
-						String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
-						if(trimlyric.equals(currlyric))
+						if(tag.hasField(FLAC_LYRICS_TAG))
 						{
-							log.info("Lyric is already present, no update required: "+ ft.getName());
-							continue;
+							String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
+							if(trimlyric.equals(currlyric))
+							{
+								log.info("Lyric is already present, no update required: "+ ft.getName());
+								continue;
+							}
+							//System.out.println("INFO: Removing existing lyric from "+ ft.getName() + ":\n" + currlyric);
+							log.info("Removing existing lyric from "+ ft.getName());
+							tag.deleteField(FLAC_LYRICS_TAG);
 						}
-						//System.out.println("INFO: Removing existing lyric from "+ ft.getName() + ":\n" + currlyric);
-						log.info("Removing existing lyric from "+ ft.getName());
-						tag.deleteField(FLAC_LYRICS_TAG);
+						// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
+						TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
+						tag.addField(lyrictf);
+						log.info("INFO: updating: " + ft.getName());
+						//System.out.println("DBUG: " + trimlyric);
+						af.commit();
 					}
-					// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-					TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
-					tag.addField(lyrictf);
-					log.info("INFO: updating: " + ft.getName());
-					//System.out.println("DBUG: " + trimlyric);
-					af.commit();
+					else
+					{
+						log.severe("WARN: No or none-FLAC tag, unable to update: " + ft.getName());
+					}
 				}
-				else
+				catch(Exception ex)
 				{
-					log.severe("WARN: No or none-FLAC tag, unable to update: " + ft.getName());
-				}
+					log.severe("Exception reading " + ft.getName() + ": " + ex.getMessage());
+				}				
 			}
 		}
 		
@@ -339,9 +346,22 @@ private final ObjectFactory objFact = new ObjectFactory();
 		String ctxname = FlacTags.class.getPackage().getName();
 		JAXBContext jc = JAXBContext.newInstance(ctxname);
 		Unmarshaller u = jc.createUnmarshaller(); 
-		JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(new FileInputStream(lyricsxml)), FlacTags.class);
+		FileInputStream fis = new FileInputStream(lyricsxml);
+		try
+		{
+		JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(fis), FlacTags.class);
 		FlacTags lyrics = o.getValue();
 		return lyrics;
+		}
+		finally
+		{
+			try {
+				fis.close();
+			} catch (IOException e) {
+				// Ignore
+			}
+		}
+		
 	}
 	
 	private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException, FileNotFoundException

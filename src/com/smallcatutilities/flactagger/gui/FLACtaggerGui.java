@@ -6,12 +6,11 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
-import java.awt.geom.Point2D;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -37,6 +36,7 @@ import com.smallcatutilities.flactagger.FLACtagger;
 
 public class FLACtaggerGui
 {
+private enum TaggerAction { EXTRACT, UPDATE };
 private static final String PROP_FILE = "flactagger.properties";
 private static final String PROP_ROOTDIR = "flactagger.rootdir";
 private static final String PROP_TAGFILE = "flactagger.tagfile";
@@ -54,7 +54,7 @@ private ActionListener updateAction = new ActionListener(){
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		doUpdate();
+		doTask(TaggerAction.UPDATE);
 	}
 };
 
@@ -62,7 +62,7 @@ private ActionListener extractAction = new ActionListener(){
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
-		doExtract();
+		doTask(TaggerAction.EXTRACT);
 	}
 };
 
@@ -100,108 +100,69 @@ WindowAdapter exitEvent = new WindowAdapter() {
 		
 	}
 
-	protected void popupBox(String title, String msg, int status)
-	{
-		JLabel tb = new JLabel();
-	JPanel pnl = new JPanel();
-	JLabel lbl = new JLabel();
-			
-		lbl.setText(title);
-		tb.setText(msg); // this is OK for small amount of text - not so good when there is alot, needs scrollbars...
-		
-		
-		//JScrollPane	scp = new JScrollPane(tb,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		//scp.setMaximumSize(new Dimension(400,300));
-		//scp.setPreferredSize(scp.getMaximumSize());
-		pnl.setLayout(new BorderLayout());
-		pnl.add(lbl, BorderLayout.NORTH);
-		//pnl.add(scp, BorderLayout.CENTER);
-		pnl.add(tb, BorderLayout.CENTER);
-		
-		JOptionPane.showMessageDialog(mainframe, pnl, "FLACtagger", status);
-		
-	}
 	protected void popupBox(String msg, int status)
 	{
 		JOptionPane.showMessageDialog(mainframe, msg, "FLACtagger", status);
 	}
 	
-	protected void doExtract()
+	protected void setEnabled(boolean enable)
 	{
-	String rd = this.getRootDir();
-	FLACtagger taggr = new FLACtagger(rd);
-	//CaptureLog cl = new CaptureLog();
-	//	Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
-	logdisplay.setText("");
-		try
+		// A better way to do this might be to use a glass pane over everything which can
+		// be enabled/disabled, but that would prevent a Cancel option from being added,
+		// unless it can be added on top of the Glass pane.
+		// actual state of the Update and Extract buttons depends on the content of the text fields
+		// and is handled by setExtUpd
+		if(enable)
 		{
-			// TODO this should really be done as a separate thread or maybe SwingWorker or maybe invokeLater
-			// with some sort of mechanism to be alerted to new text to be displayed
-			// and a way to detect when it's finished... but it works more or less like it is!!
-			if(taggr.extract(this.getFlactagFile()) != 0)
-			{
-				//popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
-				//popupBox("Extraction failed!", JOptionPane.ERROR_MESSAGE);
-				logdisplay.append("\nExtraction failed!!");
-			}
-			else
-			{
-				//popupBox("Extraction done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
-				//popupBox("Extraction done!", JOptionPane.INFORMATION_MESSAGE);
-				logdisplay.append("\nDone.");
-			}
+			setExtUpd();
 		}
-		catch (Exception e)
+		else
 		{
-			//popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
-			popupBox("Exception during extraction!", JOptionPane.ERROR_MESSAGE);
-			logdisplay.append("\nException during extraction!");
+			this.btnExtract.setEnabled(enable);
+			this.btnUpdate.setEnabled(enable);
 		}
-		//finally
-		//{
-		//	Logger.getGlobal().removeHandler(cl);
-		//}
-		logdisplay.setCaretPosition(logdisplay.getText().length() - 1);
+		this.txtFlacTagsFile.setEnabled(enable);
+		this.txtRootDir.setEnabled(enable);
+		
+		// Should also disable the directory/file choosers.
 	}
 
-	protected void doUpdate()
+	// NICETOHAVE: a Cancel button to abort the task... don't think it is possible with the existing FLACtagger
+	// unless there is a way to kill the SwingWorker thread.
+	protected void doTask(TaggerAction action)
 	{
-	String rd = this.getRootDir();
-	FLACtagger taggr = new FLACtagger(rd);
-	logdisplay.setText("");
-	//CaptureLog cl = new CaptureLog();
-	//Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
-
-		try
+		final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlactagFile());
+		logdisplay.setText("");
+		task.addPropertyChangeListener(new PropertyChangeListener()
 		{
-			// TODO this should really be done as a separate thread or maybe SwingWorker or maybe invokeLater
-			// with some sort of mechanism to be alerted to new text to be displayed
-			// and a way to detect when it's finished... but it works more or less like it is!!
-			if( taggr.update(this.getFlactagFile()) != 0)
-			{
-				//popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
-				popupBox("Update failed!", JOptionPane.ERROR_MESSAGE);
-			}
-			else
-			{
-				//popupBox("Update done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
-				popupBox("Update done!", JOptionPane.INFORMATION_MESSAGE);
-			}
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			//popupBox("Update failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
-			popupBox("Exception during update", JOptionPane.ERROR_MESSAGE);
-		}
-		finally
-		{
-			//Logger.getGlobal().removeHandler(cl);
-		}
+				public void propertyChange(PropertyChangeEvent evt)
+				{
+					String prop = evt.getPropertyName();
+					Object obj = evt.getNewValue();
+					if("state".equals(prop))
+					{
+						switch((SwingWorker.StateValue)obj)
+						{
+						case STARTED:
+							setEnabled(false);
+							break;
+						case DONE:
+							task.removePropertyChangeListener(this);
+							setEnabled(true);
+							break;
+						case PENDING:
+							break;
+						default:
+							break;
+						}
+					}
+				}			
+		});
+		task.execute();
+	}
 	
-	}
-
-	// TODO: implement as Listener on the textboxes?
+	// NICETOHAVE: This might be better done as a listener on the text boxes rather than relying
+	// on the setters being called.
 	protected void setExtUpd()
 	{
 	String r= getRootDir();
@@ -316,7 +277,6 @@ WindowAdapter exitEvent = new WindowAdapter() {
       pnl.setLayout(bl);
       pnl.add(lbl2);
 
-      // TODO Figure out how to align the left edges of the textfields....
       pnl.add(Box.createRigidArea(new Dimension(8, 0)));
       
       
@@ -373,14 +333,15 @@ WindowAdapter exitEvent = new WindowAdapter() {
 
       pnl = new JPanel(); 
       logdisplay = new JTextArea();
+      logdisplay.setEditable(false);
 		JScrollPane	scp = new JScrollPane(logdisplay,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scp.setMaximumSize(new Dimension(400,300));
 		scp.setPreferredSize(scp.getMaximumSize());
 		pnl.setLayout(new BorderLayout());
 		pnl.add(scp, BorderLayout.CENTER);
 		mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-		CaptureLog cl = new CaptureLog(logdisplay);
-		Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);	
+		//CaptureLogTA cl = new CaptureLogTA(logdisplay);
+		//Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);	
 
       
       
@@ -402,7 +363,7 @@ WindowAdapter exitEvent = new WindowAdapter() {
 	
 	private void saveSettings()
 	{
-		File pfile = new File(System.getProperty("user.home"), this.PROP_FILE);
+		File pfile = new File(System.getProperty("user.home"), PROP_FILE);
 		try
 		{
 			settings.setProperty(PROP_ROOTDIR, getRootDir());
@@ -417,7 +378,7 @@ WindowAdapter exitEvent = new WindowAdapter() {
 	
 	private void loadSettings()
 	{
-	File pfile = new File(System.getProperty("user.home"), this.PROP_FILE);
+	File pfile = new File(System.getProperty("user.home"), PROP_FILE);
 		try
 		{
 			settings.load(new FileInputStream(pfile));
@@ -435,51 +396,81 @@ WindowAdapter exitEvent = new WindowAdapter() {
 	public static void main(String[] args)
 	{
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
-		FLACtaggerGui gui = new FLACtaggerGui();
+		new FLACtaggerGui();
 	}
 
-	 class ExtractTask extends SwingWorker<String,String> 
-	 {
-		 ExtractTask() 
+	class TaggerTask extends SwingWorker<Integer, String> implements CaptureLogPublisher
+	{
+		//
+	String metadataFile;
+	String rootDir;
+	JTextArea display;
+	TaggerAction taggeraction;
+		 public TaggerTask(TaggerAction action, JTextArea logdisplay, String rootdir, String metadatafile) 
 		 { 
-			 //initialize
+			 taggeraction = action;
+			 display = logdisplay;
+			 metadataFile = metadatafile;
+			 rootDir = rootdir;
 		 }
 
 		 @Override
-		 public String doInBackground() 
+		 public Integer doInBackground() 
 		 {
-				String rd = getRootDir();
-				FLACtagger taggr = new FLACtagger(rd);
-				//CaptureLog cl = new CaptureLog();
-				//	Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
+				FLACtagger taggr = new FLACtagger(rootDir);
+				CaptureLog cl = new CaptureLog(this);
+				Logger log = Logger.getLogger(FLACtagger.class.getName());
+				int rc = 0;
+				log.addHandler(cl);
 				logdisplay.setText("");
 				
 				try
 				{
-					if(taggr.extract(getFlactagFile()) != 0)
+					
+					switch(taggeraction)
 					{
-						return "Failed!";
+					case EXTRACT:
+						rc = taggr.extract(metadataFile);
+						break;
+					case UPDATE:
+						rc = taggr.update(metadataFile);
+						break;
 					}
+					if(rc == 0)
+						publish("Done.");
 					else
-					{
-						return "Done.";
-					}
+						publish("Failed!");
+					return rc;
 				}
 				catch (Exception e)
 				{
-					return "Exception!!!";
-				}				
+					publish("Exception!!!");
+					return 2;
+				}
+				finally
+				{
+					log.removeHandler(cl);
+				}
 
 		 }
 		 @Override
 		 protected void process(List<String> chunks) 
 		 {
-	         for (String s: chunks) 
-	         {
-	             logdisplay.append(s);
-	         }
+			 for (String s: chunks) 
+	       {
+				 logdisplay.append(s);
+	       }
 		 }
+
+		@Override
+		public void publishMessage(String logmessage)
+		{
+			publish(logmessage);
+			
+		}
 	 }
+
+
 
 
 }
