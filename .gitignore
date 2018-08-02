@@ -1,6 +1,7 @@
 /bin/
 /jaudiotagger-2.2.6-SNAPSHOT-sources/
-/jaudiotagger-2.2.6-SNAPSHOT-sources.jar
-/*.zip
+*.zip
+*.jar
+*_zip.txt
 /src/com/smallcatutilities/flactagger/generated/
 *.bak
