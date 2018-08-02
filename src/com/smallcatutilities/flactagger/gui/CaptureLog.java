@@ -11,6 +11,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
+import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 
@@ -19,8 +20,8 @@ public class CaptureLog extends StreamHandler
 
 private final ByteArrayOutputStream bstream = new ByteArrayOutputStream();
 private final CaptureLogFormatter fmt = new CaptureLogFormatter();
-private final JTextComponent logdisplayer;
-	public CaptureLog(JTextComponent display)
+private final JTextArea logdisplayer;
+	public CaptureLog(JTextArea display)
 	{
 		super();
 		logdisplayer = display;
@@ -43,16 +44,17 @@ private final JTextComponent logdisplayer;
 		flush();
 		if(bstream.size() > 0)
 		{
-			try {
-				logdisplayer.getDocument().insertString(logdisplayer.getDocument().getLength(), bstream.toString(), null);
-				logdisplayer.update(logdisplayer.getGraphics());
-				logdisplayer.setCaretPosition(logdisplayer.getText().length() - 1);
-			} catch (BadLocationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			logdisplayer.append(bstream.toString());
+			logdisplayer.update(logdisplayer.getGraphics());
+			logdisplayer.setCaretPosition(logdisplayer.getText().length() - 1);
+			//try {
+				//logdisplayer.getDocument().insertString(logdisplayer.getDocument().getLength(), bstream.toString(), null);
+				//logdisplayer.update(logdisplayer.getGraphics());
+				//logdisplayer.setCaretPosition(logdisplayer.getText().length() - 1);
+			//} catch (BadLocationException e) {
+			//	e.printStackTrace();
+			//}
 		}
-		// TODO If anything was written then add it to the related component
 	}
 	
 	class CaptureLogFormatter extends SimpleFormatter 

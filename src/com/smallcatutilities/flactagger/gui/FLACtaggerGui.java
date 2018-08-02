@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -139,23 +141,27 @@ WindowAdapter exitEvent = new WindowAdapter() {
 			if(taggr.extract(this.getFlactagFile()) != 0)
 			{
 				//popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
-				popupBox("Extraction failed!", JOptionPane.ERROR_MESSAGE);
+				//popupBox("Extraction failed!", JOptionPane.ERROR_MESSAGE);
+				logdisplay.append("\nExtraction failed!!");
 			}
 			else
 			{
 				//popupBox("Extraction done!", cl.getLog(), JOptionPane.INFORMATION_MESSAGE);
-				popupBox("Extraction done!", JOptionPane.INFORMATION_MESSAGE);
+				//popupBox("Extraction done!", JOptionPane.INFORMATION_MESSAGE);
+				logdisplay.append("\nDone.");
 			}
 		}
 		catch (Exception e)
 		{
 			//popupBox("Extraction failed!", cl.getLog(), JOptionPane.ERROR_MESSAGE);
 			popupBox("Exception during extraction!", JOptionPane.ERROR_MESSAGE);
+			logdisplay.append("\nException during extraction!");
 		}
 		//finally
 		//{
 		//	Logger.getGlobal().removeHandler(cl);
 		//}
+		logdisplay.setCaretPosition(logdisplay.getText().length() - 1);
 	}
 
 	protected void doUpdate()
@@ -373,23 +379,9 @@ WindowAdapter exitEvent = new WindowAdapter() {
 		pnl.setLayout(new BorderLayout());
 		pnl.add(scp, BorderLayout.CENTER);
 		mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-		
 		CaptureLog cl = new CaptureLog(logdisplay);
 		Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);	
-      //GroupLayout layout = new GroupLayout(mainframe.getContentPane()); 
-      //layout.setHorizontalGroup(
-      //		layout.createSequentialGroup()
-      //		  .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-      //	         .addComponent(lbl1)
-      //	         .addComponent(lbl2))
-      //	     .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-      //	         .addComponent(txtRootDir)
-      //	         .addComponent(txtFlacTagsFile)
-      //	     		.addComponent(pnl))
-      //	);      
-      //mainframe.getContentPane().setLayout(layout);
 
-      // Display the directory chooser
       
       
       
@@ -439,11 +431,56 @@ WindowAdapter exitEvent = new WindowAdapter() {
 		}
 	}
 
+	
 	public static void main(String[] args)
 	{
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
 		FLACtaggerGui gui = new FLACtaggerGui();
 	}
 
-	
+	 class ExtractTask extends SwingWorker<String,String> 
+	 {
+		 ExtractTask() 
+		 { 
+			 //initialize
+		 }
+
+		 @Override
+		 public String doInBackground() 
+		 {
+				String rd = getRootDir();
+				FLACtagger taggr = new FLACtagger(rd);
+				//CaptureLog cl = new CaptureLog();
+				//	Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);
+				logdisplay.setText("");
+				
+				try
+				{
+					if(taggr.extract(getFlactagFile()) != 0)
+					{
+						return "Failed!";
+					}
+					else
+					{
+						return "Done.";
+					}
+				}
+				catch (Exception e)
+				{
+					return "Exception!!!";
+				}				
+
+		 }
+		 @Override
+		 protected void process(List<String> chunks) 
+		 {
+	         for (String s: chunks) 
+	         {
+	             logdisplay.append(s);
+	         }
+		 }
+	 }
+
+
 }
+
