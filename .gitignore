@@ -5,3 +5,5 @@
 *_zip.txt
 /src/com/smallcatutilities/flactagger/generated/
 *.bak
+/JustFLAC-master/
+/lib/
