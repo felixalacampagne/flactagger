@@ -442,7 +442,10 @@ boolean bMD5;
 	 {
 			FLACtagger taggr = new FLACtagger(rootDir);
 			CaptureLog cl = new CaptureLog(this);
-			Logger log = Logger.getLogger(FLACtagger.class.getName());
+			//Logger log = Logger.getLogger(FLACtagger.class.getName());
+			//Logger log = Logger.getGlobal(); // This stops any logging to the handler, and turns jaudiotagger logging back on!!!!
+			Logger log = Logger.getLogger("");
+			
 			int rc = 0;
 			log.addHandler(cl);
 			logdisplay.setText("");
@@ -489,7 +492,6 @@ boolean bMD5;
 	public void publishMessage(String logmessage)
 	{
 		publish(logmessage);
-		
 	}
  }
 

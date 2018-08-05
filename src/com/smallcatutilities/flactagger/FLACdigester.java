@@ -12,11 +12,13 @@ import org.kc7bfi.jflac.PCMProcessor;
 import org.kc7bfi.jflac.metadata.StreamInfo;
 import org.kc7bfi.jflac.util.ByteData;
 
+import com.sun.istack.internal.logging.Logger;
+
 // Requires the "JustFLAC" library
 public class FLACdigester implements PCMProcessor
 {
+private final Logger log = Logger.getLogger(FLACdigester.class);
 protected MessageDigest md = null;
-private FileOutputStream fos = null;
 	public String getAudioDigest(File flacFile) throws IOException
 	{
 	FileInputStream is = null;
@@ -25,7 +27,6 @@ private FileOutputStream fos = null;
 		try
 		{
 			is = new FileInputStream(flacFile);
-			fos = new FileOutputStream(new File(flacFile.getAbsolutePath() + ".raw"));
 			FLACDecoder decoder = new FLACDecoder(is);
 			decoder.addPCMProcessor(this);
 			decoder.decode();
@@ -42,8 +43,8 @@ private FileOutputStream fos = null;
 		{
 			if(is != null)
 				is.close();
-			if(fos != null)
-				fos.close();
+			//if(fos != null)
+			//	fos.close();
 		}
 		return txtmd;
 	}
@@ -63,6 +64,8 @@ private FileOutputStream fos = null;
 	public void processStreamInfo(StreamInfo si)
 	{
 		// This is called at the start
+	   byte[] simd5 = si.getMd5sum();
+	   log.info("StreamInfo MD5: " + bytesToHex(simd5));
 		try
 		{
 			md = MessageDigest.getInstance("MD5");
@@ -77,6 +80,10 @@ private FileOutputStream fos = null;
 	
 	public String bytesToHex(byte[] bs)
 	{
+	   if((bs == null) || (bs.length < 1))
+	   {
+	      return "No MD5";
+	   }
         StringBuffer sb = new StringBuffer();
         for (byte b : bs) 
         {
