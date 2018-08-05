@@ -244,7 +244,7 @@ public FileMetadata getFileMetadata(File f)
 		if((md5dig != null) && (md5dig.length()>0))
 		{
 			log.info("MD5:" + md5dig + "*" + f.getName());
-			ftx.setPCMaudioMD5(md5dig);
+			ftx.setPcmaudiomd5(md5dig);
 		}
 	}
 	return ftx;
