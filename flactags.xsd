@@ -28,11 +28,12 @@
   <xs:complexType name="FileMetadata">
     <xs:sequence>
       <xs:element type="xs:string" name="name"/>
-      <xs:element type="xs:string" name="artist"      minOccurs="0"/>
-      <xs:element type="xs:string" name="album"       minOccurs="0"/>
-      <xs:element type="xs:string" name="filemd5"     minOccurs="0"/>
-      <xs:element type="xs:string" name="pcmaudiomd5" minOccurs="0"/>
-      <xs:element type="xs:string" name="lyric"       minOccurs="0"/>
+      <xs:element type="xs:string" name="artist"        minOccurs="0"/>
+      <xs:element type="xs:string" name="album"         minOccurs="0"/>
+      <xs:element type="xs:string" name="filemd5"       minOccurs="0"/>
+      <xs:element type="xs:string" name="calcpcmmd5"    minOccurs="0"/>
+      <xs:element type="xs:string" name="strmpcmmd5"    minOccurs="0"/>
+      <xs:element type="xs:string" name="lyric"         minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 

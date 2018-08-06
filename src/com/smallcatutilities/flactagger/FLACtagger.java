@@ -192,7 +192,7 @@ public FileMetadata getFileMetadata(File f)
 	{
 		AudioFile af = AudioFileIO.read(f);
 		Tag tag = af.getTag();
-		
+
 		// Artist, album, lyric, directory name, file name
 		ftx = objFact.createFileMetadata();
 		ftx.setName(f.getName());
@@ -206,20 +206,10 @@ public FileMetadata getFileMetadata(File f)
 			// tell the parse to treat the data verbatim (I thought that is what CDATA meant) but
 			// don't know whether that must be in the schema or the xjb or what at the moment
 			lyric = lyric.replace("\r","");
-			
-			
 			lyric = lyric.replace("\u2019", "'"); // \u2019 is a fancy apostrophy quote character used  for he'd I'd aint'.
-			//lyric = lyric.replace("\ufeff", ""); // No idea what this is, a BOM or UTF-8 marker
-			
-			//for(int i=0; i<250; i++)
-			//{
-			//	System.out.println(lyric.charAt(i) + " - \\u" + String.format("%04x", (int) lyric.charAt(i)));
-			//}				
-			
+		
 			// Dump non-ascii stuff
 			lyric = lyric.replaceAll("[^\\x00-\\x7f]", "");
-			
-			//lyric = lyric.replace("\u00E2\u0080\u0099", "'");
 
 			// make it easier to edit the lyric ensure start and end lyric tags are not on the same line as the content
 			if(!lyric.startsWith("\n"))
@@ -240,12 +230,17 @@ public FileMetadata getFileMetadata(File f)
 	
 	if(md5Enabled)
 	{
-		String md5dig = getAudioDigest(f);
-		if((md5dig != null) && (md5dig.length()>0))
-		{
-			log.info("MD5:" + md5dig + "*" + f.getName());
-			ftx.setPcmaudiomd5(md5dig);
-		}
+		getAudioDigest(f, ftx);
+	}
+	else
+	{
+		// TODO: Maybe read the streaminfo MD5. Will then need a way to distinguish between the calculated and
+		// the embedded MD5 values in the "lyrics" file
+		// Looks like the way to do this is with FLACDecoder
+		//   There is a method "readStreamInfo" but it appears to require that the next metadata block to be read is
+		//   the StreamInfo, which is probably not the case for a freshly opened decode - although this is exactly 
+		// what FlacAudioFileReader.getAudioFileFormat does!! given the use of FLACDecoder it would probably be
+		// best done in FLACdigester...
 	}
 	return ftx;
 }
@@ -368,6 +363,11 @@ private FlacTags loadLyrics(String lyricsxml) throws JAXBException, FileNotFound
 	FlacTags lyrics = o.getValue();
 	return lyrics;
 	}
+	catch(JAXBException xex)
+	{
+	   log.log(Level.SEVERE, "Exception processing " + lyricsxml, xex);
+	   throw xex;
+	}
 	finally
 	{
 		try {
@@ -391,7 +391,7 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 }
 
 
-public String getAudioDigest(File flacfile)
+public String getAudioDigest(File flacfile, FileMetadata ftx)
 {
 	String dig = null;
 	FLACdigester fd = new FLACdigester();
@@ -399,6 +399,18 @@ public String getAudioDigest(File flacfile)
 	try
 	{
 		dig = fd.getAudioDigest(flacfile);
+		
+		if((dig != null) && (dig.length()>0))
+		{
+			log.info("Calculated MD5:" + dig + "*" + flacfile.getName());
+			ftx.setCalcpcmmd5(dig);
+		}
+		dig = fd.getStreaminfoMD5();
+		if((dig != null) && (dig.length()>0))
+		{
+			log.info("StreamInfo MD5:" + dig + "*" + flacfile.getName());
+			ftx.setStrmpcmmd5(dig);
+		}
 	}
 	catch (IOException e)
 	{

@@ -19,11 +19,12 @@ public class FLACdigester implements PCMProcessor
 {
 private final Logger log = Logger.getLogger(FLACdigester.class);
 protected MessageDigest md = null;
+protected String streaminfoMD5 = null;
+protected String calculatedMD5 = null;
+
 	public String getAudioDigest(File flacFile) throws IOException
 	{
 	FileInputStream is = null;
-	String txtmd = null;
-			
 		try
 		{
 			is = new FileInputStream(flacFile);
@@ -35,18 +36,17 @@ protected MessageDigest md = null;
 			byte[] mdbytes = md.digest();
           
 			// Incredibly there isn't a simple way to get the string representation of the MD5
-			// Needless to say there a billion and one wierd ways of doing it according to Google
+			// Needless to say there a billion and one weird ways of doing it according to Google
 			// but i'll stick with the simplest I can think of.
-			txtmd = bytesToHex(mdbytes);
+			calculatedMD5 = bytesToHex(mdbytes);
 		}
 		finally
 		{
 			if(is != null)
 				is.close();
-			//if(fos != null)
-			//	fos.close();
 		}
-		return txtmd;
+		
+		return calculatedMD5;
 	}
 
 	@Override
@@ -64,8 +64,9 @@ protected MessageDigest md = null;
 	public void processStreamInfo(StreamInfo si)
 	{
 		// This is called at the start
-	   byte[] simd5 = si.getMd5sum();
-	   log.info("StreamInfo MD5: " + bytesToHex(simd5));
+	   byte[] simd5 = si.getMD5sum();
+	   streaminfoMD5 = bytesToHex(simd5);
+
 		try
 		{
 			md = MessageDigest.getInstance("MD5");
@@ -82,13 +83,24 @@ protected MessageDigest md = null;
 	{
 	   if((bs == null) || (bs.length < 1))
 	   {
-	      return "No MD5";
+	      return null;
 	   }
-        StringBuffer sb = new StringBuffer();
-        for (byte b : bs) 
-        {
- 			sb.append(String.format("%02x", b & 0xff));
-        }          
-        return sb.toString();
+	   StringBuffer sb = new StringBuffer();
+	   for (byte b : bs) 
+	   {
+	   	sb.append(String.format("%02x", b & 0xff));
+	   }          
+	   return sb.toString();
 	}
+
+	public String getStreaminfoMD5()
+	{
+		return streaminfoMD5;
+	}
+
+	public String getCalculatedMD5()
+	{
+		return calculatedMD5;
+	}
+
 }
