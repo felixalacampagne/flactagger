@@ -201,14 +201,20 @@ public FileMetadata getFileMetadata(File f)
 		String lyric = tag.getFirst(FLAC_LYRICS_TAG);
 		if(lyric != null)
 		{
-			// Leaving the CRLF in results lines terminated with "&#xD;" and a normal linefeed
+			// Leaving the CRLF in results in lines terminated with the text "&#xD;" and a normal linefeed
 			// Seems the Java XML parse is stuck in the Unix world. There might be a way to
 			// tell the parse to treat the data verbatim (I thought that is what CDATA meant) but
 			// don't know whether that must be in the schema or the xjb or what at the moment
 			lyric = lyric.replace("\r","");
-			lyric = lyric.replace("\u2019", "'"); // \u2019 is a fancy apostrophy quote character used  for he'd I'd aint'.
-		
-			// Dump non-ascii stuff
+			lyric = lyric.replace("\u2018", "'"); // left single quote, for completeness
+			lyric = lyric.replace("\u2019", "'"); // right single quote, frequently used for he'd, I'd, aint', etc..
+			lyric = lyric.replace("\u201D", "'"); // right double quote
+			lyric = lyric.replace("\u201C", "'"); // left double quote
+			lyric = lyric.replace("&", "and");
+			lyric = lyric.replace(">", "");
+			lyric = lyric.replace("<", "");
+
+			// Dump remaining non-ascii stuff
 			lyric = lyric.replaceAll("[^\\x00-\\x7f]", "");
 
 			// make it easier to edit the lyric ensure start and end lyric tags are not on the same line as the content
@@ -228,20 +234,7 @@ public FileMetadata getFileMetadata(File f)
 		e.printStackTrace();
 	} 
 	
-	if(md5Enabled)
-	{
-		getAudioDigest(f, ftx);
-	}
-	else
-	{
-		// TODO: Maybe read the streaminfo MD5. Will then need a way to distinguish between the calculated and
-		// the embedded MD5 values in the "lyrics" file
-		// Looks like the way to do this is with FLACDecoder
-		//   There is a method "readStreamInfo" but it appears to require that the next metadata block to be read is
-		//   the StreamInfo, which is probably not the case for a freshly opened decode - although this is exactly 
-		// what FlacAudioFileReader.getAudioFileFormat does!! given the use of FLACDecoder it would probably be
-		// best done in FLACdigester...
-	}
+	getAudioDigest(f, ftx);
 	return ftx;
 }
 
@@ -351,30 +344,27 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 	
 return 0;	
 }
+
 private FlacTags loadLyrics(String lyricsxml) throws JAXBException, FileNotFoundException
 {
 	String ctxname = FlacTags.class.getPackage().getName();
 	JAXBContext jc = JAXBContext.newInstance(ctxname);
 	Unmarshaller u = jc.createUnmarshaller(); 
-	FileInputStream fis = new FileInputStream(lyricsxml);
+	AsciiFilterInputStream ascii = new AsciiFilterInputStream(new FileInputStream(lyricsxml));
 	try
 	{
-	JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(fis), FlacTags.class);
-	FlacTags lyrics = o.getValue();
-	return lyrics;
+		JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(ascii), FlacTags.class);
+		FlacTags lyrics = o.getValue();
+		return lyrics;
 	}
-	catch(JAXBException xex)
-	{
-	   log.log(Level.SEVERE, "Exception processing " + lyricsxml, xex);
-	   throw xex;
-	}
+   catch(JAXBException xex)
+   {
+      log.log(Level.SEVERE, "Exception processing " + lyricsxml, xex);
+      throw xex;
+   }
 	finally
 	{
-		try {
-			fis.close();
-		} catch (IOException e) {
-			// Ignore
-		}
+		try{ ascii.close(); } catch (IOException e) {}
 	}
 	
 }
@@ -384,10 +374,23 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	// Arg for JAXBContext is the package containing the ObjectFactory for the type to be Un/Marshalled
 	String ctxname = FlacTags.class.getPackage().getName();
 	JAXBContext jc = JAXBContext.newInstance(ctxname);	
-	Marshaller m = jc.createMarshaller();
-	
-	JAXBElement<FlacTags> o = objFact.createFlactags(lyrics);
-	m.marshal(o, new FileOutputStream(lyricsxml));
+	FileOutputStream fos = null;
+	   Marshaller m = jc.createMarshaller();
+	   m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+	   JAXBElement<FlacTags> o = objFact.createFlactags(lyrics);
+	   try
+	   {
+	      fos = new FileOutputStream(lyricsxml);
+	      m.marshal(o, fos);
+	   }
+	   finally
+	   {
+	      if(fos != null)
+	      {
+	         try {fos.close(); } catch (Exception e) {}
+	      }
+	   }
+
 }
 
 
@@ -398,18 +401,30 @@ public String getAudioDigest(File flacfile, FileMetadata ftx)
 
 	try
 	{
-		dig = fd.getAudioDigest(flacfile);
-		
-		if((dig != null) && (dig.length()>0))
+		if(md5Enabled)
 		{
-			log.info("Calculated MD5:" + dig + "*" + flacfile.getName());
-			ftx.setCalcpcmmd5(dig);
+			dig = fd.getAudioDigest(flacfile);
+			
+			if((dig != null) && (dig.length()>0))
+			{
+				log.info("Calculated MD5:" + dig + "*" + flacfile.getName());
+				ftx.setCalcpcmmd5(dig);
+			}
+			dig = fd.getStreaminfoMD5();
+			if((dig != null) && (dig.length()>0))
+			{
+				log.info("StreamInfo MD5:" + dig + "*" + flacfile.getName());
+				ftx.setStrmpcmmd5(dig);
+			}
 		}
-		dig = fd.getStreaminfoMD5();
-		if((dig != null) && (dig.length()>0))
+		else
 		{
-			log.info("StreamInfo MD5:" + dig + "*" + flacfile.getName());
-			ftx.setStrmpcmmd5(dig);
+			dig = fd.getStreamInfoMD5(flacfile);
+			if((dig != null) && (dig.length()>0))
+			{
+				log.info("StreamInfo MD5:" + dig + "*" + flacfile.getName());
+				ftx.setStrmpcmmd5(dig);
+			}			
 		}
 	}
 	catch (IOException e)

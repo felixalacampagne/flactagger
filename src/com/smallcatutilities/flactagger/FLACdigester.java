@@ -2,10 +2,13 @@ package com.smallcatutilities.flactagger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.kc7bfi.jflac.FLACDecoder;
 import org.kc7bfi.jflac.PCMProcessor;
@@ -21,6 +24,9 @@ private final Logger log = Logger.getLogger(FLACdigester.class);
 protected MessageDigest md = null;
 protected String streaminfoMD5 = null;
 protected String calculatedMD5 = null;
+
+
+
 
 	public String getAudioDigest(File flacFile) throws IOException
 	{
@@ -93,6 +99,25 @@ protected String calculatedMD5 = null;
 	   return sb.toString();
 	}
 
+	public String getStreamInfoMD5(File flacFile) throws IOException
+	{
+	FileInputStream is = null;
+
+		is = new FileInputStream(flacFile);
+		FLACDecoder decoder = new FLACDecoder(is);
+      StreamInfo si = decoder.readStreamInfo();
+      if (si == null) 
+      {
+      	log.info("No stream info found in " + flacFile.getName());
+      }
+      else
+      {
+   	   byte[] simd5 = si.getMD5sum();
+   	   streaminfoMD5 = bytesToHex(simd5);
+      }
+      return streaminfoMD5;
+	}
+	
 	public String getStreaminfoMD5()
 	{
 		return streaminfoMD5;
