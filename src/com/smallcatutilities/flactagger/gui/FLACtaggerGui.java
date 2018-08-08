@@ -350,7 +350,7 @@ private void init()
    pnl.add(chkMD5);
    pnl.add(btnExtract);
    pnl.add(btnUpdate);
-  
+   pnl.add(Box.createRigidArea(new Dimension(100, 0)));
    mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
 
    pnl = new JPanel(); 
