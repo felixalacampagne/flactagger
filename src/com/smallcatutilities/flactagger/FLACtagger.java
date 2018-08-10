@@ -188,6 +188,7 @@ public FileMetadata getFileMetadata(File f)
 {
 	FileMetadata ftx = null;
 	log.info("Loading: " + f.getName());
+	
 	try 
 	{
 		AudioFile af = AudioFileIO.read(f);
@@ -396,25 +397,30 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 
 public String getAudioDigest(File flacfile, FileMetadata ftx)
 {
-	String dig = null;
+	
 	FLACdigester fd = new FLACdigester();
-
+	String dig = null;
 	try
 	{
 		if(md5Enabled)
 		{
-			dig = fd.getAudioDigest(flacfile);
+		   dig = fd.getAudioDigest(flacfile);
 			
 			if((dig != null) && (dig.length()>0))
 			{
 				log.info("Calculated MD5:" + dig + "*" + flacfile.getName());
 				ftx.setCalcpcmmd5(dig);
 			}
-			dig = fd.getStreaminfoMD5();
-			if((dig != null) && (dig.length()>0))
+			String sdig = fd.getStreaminfoMD5();
+			if((sdig != null) && (sdig.length()>0))
 			{
-				log.info("StreamInfo MD5:" + dig + "*" + flacfile.getName());
-				ftx.setStrmpcmmd5(dig);
+				log.info("StreamInfo MD5:" + sdig + "*" + flacfile.getName());
+				ftx.setStrmpcmmd5(sdig);
+				
+				if((dig != null) && !dig.equalsIgnoreCase(sdig))
+				{
+				   log.warning("MISMATCH! MD5s are different: " + flacfile.getName());
+				}
 			}
 		}
 		else

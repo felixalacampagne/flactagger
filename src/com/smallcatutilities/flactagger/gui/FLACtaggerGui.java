@@ -1,6 +1,7 @@
 package com.smallcatutilities.flactagger.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -28,10 +29,17 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 
 import com.smallcatutilities.flactagger.FLACtagger;
 
@@ -52,7 +60,7 @@ private JTextField txtFlacTagsFile;
 private JCheckBox chkMD5;
 private JButton btnExtract;
 private JButton btnUpdate;
-private JTextArea logdisplay;
+private JTextPane logdisplay;
 
 private Properties settings = new Properties();
 
@@ -354,9 +362,15 @@ private void init()
    mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
 
    pnl = new JPanel(); 
-   logdisplay = new JTextArea();
+   logdisplay = new JTextPane();
    logdisplay.setEditable(false);
-   JScrollPane	scp = new JScrollPane(logdisplay,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+   
+   // xpnl is required to prevent the JTextPane from wrapping lines instread of allowing
+   // the ScrollPane to display horizontal scrollbars (dont' ask me why, I've no idea, I
+   // just found it via Google and it appears to be the only way to prevent the line wrapping.
+   JPanel xpnl = new JPanel(new BorderLayout());
+   xpnl.add(logdisplay, BorderLayout.CENTER);
+   JScrollPane	scp = new JScrollPane(xpnl,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
    scp.setMaximumSize(new Dimension(400,300));
    scp.setPreferredSize(scp.getMaximumSize());
    pnl.setLayout(new BorderLayout());
@@ -425,16 +439,21 @@ class TaggerTask extends SwingWorker<Integer, String> implements CaptureLogPubli
 	//
 String metadataFile;
 String rootDir;
-JTextArea display;
+JTextPane display;
 TaggerAction taggeraction;
+MutableAttributeSet errorAttr = null;
 boolean bMD5;
-	 public TaggerTask(TaggerAction action, JTextArea logdisplay, String rootdir, String metadatafile, boolean calcMD5) 
+	 public TaggerTask(TaggerAction action, JTextPane logdisplay, String rootdir, String metadatafile, boolean calcMD5) 
 	 { 
 		 taggeraction = action;
 		 display = logdisplay;
 		 metadataFile = metadatafile;
 		 rootDir = rootdir;
 		 bMD5 = calcMD5;
+		 
+		 errorAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes());
+		 
+		 StyleConstants.setForeground(errorAttr, Color.RED);
 	 }
 
 	 @Override
@@ -484,7 +503,24 @@ boolean bMD5;
 	 {
 		 for (String s: chunks) 
        {
-			 logdisplay.append(s);
+			 //logdisplay.append(s);
+		    AttributeSet attr = null;
+		    Document doc = logdisplay.getDocument();
+		  
+		  
+		    try
+		    {
+		       if(s.startsWith("WARN") || s.startsWith("ERROR") || s.startsWith("SEVERE"))
+		       {
+		          attr = errorAttr;
+		       }
+		       doc.insertString(doc.getLength(), s, attr);
+		    }
+         catch (BadLocationException e)
+         {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+         }
        }
 	 }
 
