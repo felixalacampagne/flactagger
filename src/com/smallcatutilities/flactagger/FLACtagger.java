@@ -170,7 +170,7 @@ List<FileMetadata> files = null;
 				d = objFact.createDirectory();
 				d.setName(dir.getName());
 				d.setFiles(objFact.createFileList());
-				files = d.getFiles().getList();
+				files = d.getFiles().getFilemetadata();
 			}
 			files.add(ft);
 			flaccnt++;
@@ -288,7 +288,7 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 		log.info("Processing Directory: " + d.getName());
 
 		FileList files = d.getFiles();
-		for(FileMetadata ft : files.getList())
+		for(FileMetadata ft : files.getFilemetadata())
 		{
 			String trimlyric = ft.getLyric();
 			if(trimlyric == null)

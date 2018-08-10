@@ -21,7 +21,16 @@
 
   <xs:complexType name="FileList">
     <xs:sequence>
-      <xs:element type="FileMetadata" name="list" maxOccurs="unbounded" minOccurs="0"/>
+      <!-- name becomes the tag of a single entry in the FileList, ie. a file
+           is represented as a tag block called "filemetadata", which is fine and good.
+           Unfortunately name also becomes the name of the method to get ALL the files, ie. the
+           list of files. Thus FileList.getFilemetadata actually returns a List<FileMetadata>
+           which is a bit counter-intuitive. Originally name=list, but results in the file tag blocks
+           being called 'list', which looks worse. There maybe a way to avoid this with the .xjb
+           binding but not really worth the hassle. It's nicer to have the XML look good so I'll
+           live withthe strange looking method name.
+       -->
+      <xs:element type="FileMetadata" name="filemetadata" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 
