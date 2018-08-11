@@ -1,0 +1,6 @@
+[submodule "jaudiotagger"]
+	path = jaudiotagger
+	url = https://bitbucket.org/ijabz/jaudiotagger.git
+[submodule "justflac"]
+	path = justflac
+	url = https://github.com/drogatkin/JustFLAC.git
