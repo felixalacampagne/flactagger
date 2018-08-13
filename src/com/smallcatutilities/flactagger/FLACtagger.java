@@ -187,8 +187,7 @@ List<FileMetadata> files = null;
 public FileMetadata getFileMetadata(File f)
 {
 	FileMetadata ftx = null;
-	log.info("Loading: " + f.getName());
-	
+	log.info("Loading: " + getFileDispName(f));
 	try 
 	{
 		AudioFile af = AudioFileIO.read(f);
@@ -304,7 +303,8 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 			// unless ? means 0 or 1... it does!
 			trimlyric = trimlyric.replaceAll("\r?\n", "\r\n");
 			File f = new File(dir, ft.getName());
-			log.info("Loading: " + ft.getName());
+			String fdisp = getFileDispName(f);
+			log.info("Loading: " + fdisp);
 			try
 			{
 			AudioFile af = AudioFileIO.read(f);
@@ -317,28 +317,26 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 						String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
 						if(trimlyric.equals(currlyric))
 						{
-							log.info("Lyric is already present, no update required: "+ ft.getName());
+							log.info("Lyric is already present, no update required: "+ fdisp);
 							continue;
 						}
-						//System.out.println("INFO: Removing existing lyric from "+ ft.getName() + ":\n" + currlyric);
-						log.info("Removing existing lyric from "+ ft.getName());
+						log.info("Removing existing lyric from "+ fdisp);
 						tag.deleteField(FLAC_LYRICS_TAG);
 					}
 					// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
 					TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
 					tag.addField(lyrictf);
-					log.info("INFO: updating: " + ft.getName());
-					//System.out.println("DBUG: " + trimlyric);
+					log.info("INFO: updating: " + fdisp);
 					af.commit();
 				}
 				else
 				{
-					log.severe("WARN: No or none-FLAC tag, unable to update: " + ft.getName());
+					log.severe("WARN: No or none-FLAC tag, unable to update: " + fdisp);
 				}
 			}
 			catch(Exception ex)
 			{
-				log.severe("Exception reading " + ft.getName() + ": " + ex.getMessage());
+				log.severe("Exception reading " + fdisp + ": " + ex.getMessage());
 			}				
 		}
 	}
@@ -394,6 +392,10 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 
 }
 
+private String getFileDispName(File f)
+{
+	return (new File(f.getParent()).getName()) + File.separatorChar + f.getName();
+}
 
 public String getAudioDigest(File flacfile, FileMetadata ftx)
 {

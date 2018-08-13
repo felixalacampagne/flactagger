@@ -54,6 +54,11 @@ private static final String PROP_CALCMD5 = "flactagger.calcmd5";
 
 
 private static final String PROP_LOCATION = "flactagger.location";
+
+private static final String MSG_DONE = "Done.";
+private static final String MSG_FAILED = "Failed!";
+private static final String MSG_EXCEPTION = "Exception!!!!!!";
+
 private JFrame mainframe;
 private JTextField txtRootDir;
 private JTextField txtFlacTagsFile;
@@ -441,7 +446,9 @@ String metadataFile;
 String rootDir;
 JTextPane display;
 TaggerAction taggeraction;
+MutableAttributeSet defaultAttr = null;
 MutableAttributeSet errorAttr = null;
+MutableAttributeSet successAttr = null;
 boolean bMD5;
 	 public TaggerTask(TaggerAction action, JTextPane logdisplay, String rootdir, String metadatafile, boolean calcMD5) 
 	 { 
@@ -451,9 +458,13 @@ boolean bMD5;
 		 rootDir = rootdir;
 		 bMD5 = calcMD5;
 		 
-		 errorAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes());
-		 
+		// defaultAttr doesn't need to be Mutable (at the moment) but doing it like this for consistency.
+		 defaultAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes()); 
+		 errorAttr = new SimpleAttributeSet(defaultAttr);
 		 StyleConstants.setForeground(errorAttr, Color.RED);
+		 
+		 successAttr = new SimpleAttributeSet(defaultAttr);
+		 StyleConstants.setForeground(successAttr, Color.GREEN);
 	 }
 
 	 @Override
@@ -482,14 +493,14 @@ boolean bMD5;
 					break;
 				}
 				if(rc == 0)
-					publish("Done.");
+					publish(MSG_DONE);
 				else
-					publish("Failed!");
+					publish(MSG_FAILED);
 				return rc;
 			}
 			catch (Exception e)
 			{
-				publish("Exception!!!");
+				publish(MSG_EXCEPTION);
 				return 2;
 			}
 			finally
@@ -510,9 +521,24 @@ boolean bMD5;
 		  
 		    try
 		    {
-		       if(s.startsWith("WARN") || s.startsWith("ERROR") || s.startsWith("SEVERE"))
+		   	 if(s.startsWith("INFO:") || s.startsWith("DEBUG:"))
+		   	 {
+		   		 attr = defaultAttr;
+		   	 }
+		   	 else if(s.startsWith("WARNING:") || s.startsWith("ERROR:") || s.startsWith("SEVERE:"))
 		       {
+		      	 // This only prints the first debug line in red. So an excpetion stacktrace
+		      	 // is still printed with the default attributes. Maybe should make this a toggle
+		      	 // so the attribute stays in effect until a different severity arrives??
 		          attr = errorAttr;
+		       }
+		       else if(MSG_DONE.equals(s))
+		       {
+		      	 attr = successAttr;
+		       }
+		       else if(MSG_EXCEPTION.equals(s) || MSG_FAILED.equals(s))
+		       {
+		      	 attr = errorAttr;
 		       }
 		       doc.insertString(doc.getLength(), s, attr);
 		    }
