@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -202,7 +204,19 @@ protected void setRootDir(String root)
 
 protected String getRootDir()
 {
-	return txtRootDir.getText();
+String root = txtRootDir.getText();
+
+// remove the annoying quotes added when using a pasted "copy as path".
+// regex is a bit of overkill but I copied it from the filechooser
+// Could check for a full path, but since it's only me who will use this
+// and consequently only pasted a full path will be quoted, I'm not going to....
+Matcher mat = Pattern.compile("^\"(\\p{Alpha}:.*)\"$").matcher(root);
+if(mat.matches())
+{
+   root = mat.group(1);
+   txtRootDir.setText(root); // Correct the displayed value
+}
+   return root;
 }
 
 protected void setFlactagFile(String tagfile)
@@ -272,10 +286,25 @@ private void init()
     	 	chooser.setDialogTitle("Choose base directory");
     	 	chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     	 	chooser.setAcceptAllFileFilterUsed(false);
-    	 	    
+    	 	
     	 	if (chooser.showOpenDialog(mainframe) == JFileChooser.APPROVE_OPTION) 
     	 	{ 
     	 		File sel = chooser.getSelectedFile();
+    	 		
+    	 		// Java too stupid to realise when a path is pasted into it, instead it
+    	 		// appends the quoted text onto the current directory. Can't find a practical way to
+    	 		// intercept the quotes to try to crudely detected a quoted filename and assume its
+    	 		// a full path name. It's even worse than that. The quoted text is not even interpretted
+    	 		// as the name, it's just blindly added to the current directory and then the path
+    	 		// is parsed as if the quotes are not there with the result that the name is the last directory
+    	 		// with a quote at the end but not the begining!!
+    	 		String name = sel.getAbsolutePath();
+    	 		Matcher mat = Pattern.compile("^.*\"(\\p{Alpha}:.*)\"$").matcher(name);
+    	 		if(mat.matches())
+    	 		{
+    	 		   sel = new File(mat.group(1));
+    	 		}
+
     	 		if(!sel.isDirectory())
     	 		{
     	 			sel = sel.getParentFile();
