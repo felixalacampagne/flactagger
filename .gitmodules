@@ -3,7 +3,7 @@
 	url = https://bitbucket.org/ijabz/jaudiotagger.git
 [submodule "justflac"]
 	path = justflac
-	url = https://github.com/drogatkin/JustFLAC.git
+	url = git@github.com:felixalacampagne/JustFLAC.git
 [submodule "modules/jflac"]
 	path = modules/jflac
 	url = git@github.com:felixalacampagne/JustFLAC.git
