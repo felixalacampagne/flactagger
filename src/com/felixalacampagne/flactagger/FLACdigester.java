@@ -1,4 +1,4 @@
-package com.smallcatutilities.flactagger;
+package com.felixalacampagne.flactagger;
 
 import java.io.File;
 import java.io.FileInputStream;

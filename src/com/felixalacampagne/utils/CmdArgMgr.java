@@ -1,4 +1,4 @@
-package com.smallcatutilities.utils;
+package com.felixalacampagne.utils;
 import java.util.Properties;
 
 

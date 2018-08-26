@@ -1,4 +1,4 @@
-package com.smallcatutilities.flactagger.gui;
+package com.felixalacampagne.flactagger.gui;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

@@ -1,4 +1,4 @@
-package com.smallcatutilities.flactagger.gui;
+package com.felixalacampagne.flactagger.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -43,7 +43,7 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import com.smallcatutilities.flactagger.FLACtagger;
+import com.felixalacampagne.flactagger.FLACtagger;
 
 
 public class FLACtaggerGui

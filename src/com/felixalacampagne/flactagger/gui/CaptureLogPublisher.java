@@ -1,4 +1,4 @@
-package com.smallcatutilities.flactagger.gui;
+package com.felixalacampagne.flactagger.gui;
 
 /**
  * Interface to allow CaptureLog to write a message to the SwiingWorker 

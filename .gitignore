@@ -3,7 +3,7 @@
 *.zip
 *.jar
 *_zip.txt
-/src/com/smallcatutilities/flactagger/generated/
+/src/com/felixalacampagne/flactagger/generated/
 *.bak
 /JustFLAC-master/
 /lib/

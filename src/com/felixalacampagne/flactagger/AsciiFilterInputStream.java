@@ -1,4 +1,4 @@
-package com.smallcatutilities.flactagger;
+package com.felixalacampagne.flactagger;
 
 import java.io.FilterInputStream;
 import java.io.IOException;

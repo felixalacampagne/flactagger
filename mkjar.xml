@@ -9,7 +9,7 @@
     <target name="create_run_jar">
         <jar destfile="${dir.jarfile}/FLACtagger.jar" filesetmanifest="mergewithoutmain">
             <manifest>
-                <attribute name="Main-Class" value="com.smallcatutilities.flactagger.gui.FLACtaggerGui"/>
+                <attribute name="Main-Class" value="com.felixalacampagne.flactagger.gui.FLACtaggerGui"/>
                 <attribute name="Class-Path" value="."/>
             </manifest>
             <fileset dir="${dir.jarfile}/bin"/>

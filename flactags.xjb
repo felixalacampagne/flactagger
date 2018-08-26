@@ -4,7 +4,7 @@
               jxb:version="1.0"> 
 <jxb:bindings schemaLocation="flactags.xsd">
 <jxb:schemaBindings>
-   <jxb:package name="com.smallcatutilities.flactagger.generated.flactags" ></jxb:package>
+   <jxb:package name="com.felixalacampagne.flactagger.generated.flactags" ></jxb:package>
 </jxb:schemaBindings>
 </jxb:bindings>
 </jxb:bindings>

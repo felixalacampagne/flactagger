@@ -1,4 +1,4 @@
-package com.smallcatutilities.flactagger;
+package com.felixalacampagne.flactagger;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -28,12 +28,12 @@ import org.jaudiotagger.tag.TagField;
 import org.jaudiotagger.tag.flac.FlacTag;
 import org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField;
 
-import com.smallcatutilities.flactagger.generated.flactags.Directory;
-import com.smallcatutilities.flactagger.generated.flactags.FileList;
-import com.smallcatutilities.flactagger.generated.flactags.FileMetadata;
-import com.smallcatutilities.flactagger.generated.flactags.FlacTags;
-import com.smallcatutilities.flactagger.generated.flactags.ObjectFactory;
-import com.smallcatutilities.utils.CmdArgMgr;
+import com.felixalacampagne.flactagger.generated.flactags.Directory;
+import com.felixalacampagne.flactagger.generated.flactags.FileList;
+import com.felixalacampagne.flactagger.generated.flactags.FileMetadata;
+import com.felixalacampagne.flactagger.generated.flactags.FlacTags;
+import com.felixalacampagne.flactagger.generated.flactags.ObjectFactory;
+import com.felixalacampagne.utils.CmdArgMgr;
 
 public class FLACtagger
 {
