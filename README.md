@@ -15,7 +15,7 @@ providing the export was relatively simple. On the way I discovered a way to cre
 raw audio to match the digests created by ffmpeg, and also discovered that most FLAC files also 
 contain the same digest embedded in them. This provides a handy way of checking that the audio
 hasn't been changed by the various operations applied to the files between creation and the final
-listening format, which just happens to be ALAC, for me, also also ensuring that backups on optical
+listening format, which for me just happens to be ALAC, and also ensuring that backups on optical
 media haven't become corrupt.
 
 FLACtagger relies on;
