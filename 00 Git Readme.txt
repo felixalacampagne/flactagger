@@ -32,3 +32,11 @@ username and password.
 
 So this is a change which will hopefully be push to GitHub without me needed to enter the username and password.
 
+Yay! It seems to have worked.
+
+git push origin master
+
+Something uploaded with no password prompts!! Let's go for two in a row.
+
+Now need to figure out how to get the change I made to JustFLAC available in GitHub. At the moment the
+sub-modules appear as references but they don't go anywhere in GitHub when they are clicked.
