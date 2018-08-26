@@ -276,10 +276,19 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 		log.severe("No Lyrics loaded from " + lyricsxml + "!");
 		return 1;
 	}
-
+	String rootName = new File(rootDir).getName();
+	
 	for(Directory d : lyrics.getDirectory())
 	{
-		File dir = new File(rootDir, d.getName());
+	   File dir;
+	   if(rootName.equals(rootName))
+	   {
+	      dir = new File(rootDir);
+	   }
+	   else
+	   {
+	      dir = new File(rootDir, d.getName());
+	   }
 		if(!dir.exists())
 		{
 			log.severe("Directory not found: " + dir.getAbsolutePath());
@@ -326,7 +335,7 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 					// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
 					TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
 					tag.addField(lyrictf);
-					log.info("INFO: updating: " + fdisp);
+					log.info("updating: " + fdisp);
 					af.commit();
 				}
 				else

@@ -209,7 +209,7 @@ String root = txtRootDir.getText();
 // remove the annoying quotes added when using a pasted "copy as path".
 // regex is a bit of overkill but I copied it from the filechooser
 // Could check for a full path, but since it's only me who will use this
-// and consequently only pasted a full path will be quoted, I'm not going to....
+// and consequently only a pasted full path will be quoted, I'm not going to....
 Matcher mat = Pattern.compile("^\"(\\p{Alpha}:.*)\"$").matcher(root);
 if(mat.matches())
 {
@@ -501,6 +501,7 @@ boolean bMD5;
 	 {
 			FLACtagger taggr = new FLACtagger(rootDir);
 			CaptureLog cl = new CaptureLog(this);
+			//Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
 			//Logger log = Logger.getLogger(FLACtagger.class.getName());
 			//Logger log = Logger.getGlobal(); // This stops any logging to the handler, and turns jaudiotagger logging back on!!!!
 			Logger log = Logger.getLogger("");
