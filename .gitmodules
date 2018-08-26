@@ -4,3 +4,9 @@
 [submodule "justflac"]
 	path = justflac
 	url = https://github.com/drogatkin/JustFLAC.git
+[submodule "modules/jflac"]
+	path = modules/jflac
+	url = git@github.com:felixalacampagne/JustFLAC.git
+[submodule "jflac"]
+	path = jflac
+	url = git@github.com:felixalacampagne/JustFLAC.git
