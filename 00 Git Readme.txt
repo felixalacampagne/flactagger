@@ -12,4 +12,23 @@ Create the sub-modules in sub-directories with suitable names
    $ git commit -am 'Added jaudiotagger and JustFLAC as submodules'
    $ git push origin master
 
+GitHub
+
+Created a GitHub account called "felixalacampagne" in honour of the soon-to-be-defunct cat hotel.
+Created the GitHub repo "FLACtagger".
+Created an SSH key via the Git Bash command line.
+Added the GitHub repo as a remote "origin" to my bare repo using the URL provided by "SSH clone":
+
+git remote add origin git@github.com:felixalacampagne/FLACtagger.git
+
+Tried to init the GitHub repo. 
+
+git push -u origin --force --all
+git push origin --force --tags
+
+It didn't fail, but it didn't do anything, probably because I has previously
+added the github repo using the "https" URL. That uploaded files, but with a zillion prompts for
+username and password.
+
+So this is a change which will hopefully be push to GitHub without me needed to enter the username and password.
 
