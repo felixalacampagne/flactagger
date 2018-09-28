@@ -281,12 +281,14 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 	for(Directory d : lyrics.getDirectory())
 	{
 	   File dir;
+	   // If album directory was specified as root then use it
 	   if(rootName.equals(d.getName()))
 	   {
 	      dir = new File(rootDir);
 	   }
 	   else
 	   {
+	      // If album directory is not the same as the root then assume it is in the root
 	      dir = new File(rootDir, d.getName());
 	   }
 		if(!dir.exists())
