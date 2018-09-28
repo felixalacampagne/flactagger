@@ -281,7 +281,7 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 	for(Directory d : lyrics.getDirectory())
 	{
 	   File dir;
-	   if(rootName.equals(rootName))
+	   if(rootName.equals(d.getName()))
 	   {
 	      dir = new File(rootDir);
 	   }
@@ -312,6 +312,8 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 			// unless ? means 0 or 1... it does!
 			trimlyric = trimlyric.replaceAll("\r?\n", "\r\n");
 			File f = new File(dir, ft.getName());
+			
+			
 			String fdisp = getFileDispName(f);
 			log.info("Loading: " + fdisp);
 			try
@@ -388,7 +390,25 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	   JAXBElement<FlacTags> o = objFact.createFlactags(lyrics);
 	   try
 	   {
-	      fos = new FileOutputStream(lyricsxml);
+	      File lxfile = new File(lyricsxml);
+	      if(lxfile.isDirectory())
+	      {
+	         // If a directory is specified then create the lyrics file using the 
+	         // lyric directory in the directory.
+	         // Eventually it might be nicer to write each directories lyric to a 
+	         // separate file, but that's maybe something for the Gui to handle
+	         if(lyrics.getDirectory().size() > 0)
+	         {
+	            lxfile = new File(lxfile, lyrics.getDirectory().get(0).getName() + ".xml");
+	         }
+	         else
+	         {
+	            lxfile = new File(lxfile, "flactaggerlyrics.xml");
+	         }
+	      }
+	      
+	      
+	      fos = new FileOutputStream(lxfile);
 	      m.marshal(o, fos);
 	   }
 	   finally
