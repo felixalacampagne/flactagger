@@ -109,25 +109,38 @@ public FLACtagger(String root)
 }
 	
 	
-public int extract(String lyricsxml) throws Exception
+public int extract(String alyricsxml) throws Exception
 {
 FlacTags lyrics =  objFact.createFlacTags();
 File root = new File(rootDir);
-	// Dont want a real recurse search, only the current directory if it containts flacs or
+boolean separatelyrics = false;
+	// Dont want a real recurse search, only the current directory if it contains flacs or
 	// the sub-directories of the current directory if there are no flacs.
 	
+   // Kludge!!: if alyricsxml is a directory then save each lyrics as
+   // and individual file. The individual file names is already handled by 
+   // saveLyrics, just need to create a new lyrics and save it for each
+   // flac directory. This could be made into a parameter... later
+   separatelyrics = (new File(alyricsxml).isDirectory());
+
 	// extract flacs in rootDir
 	if(extractFiles(root, lyrics) == 0)
 	{
 		for(File subdir : getDirs(root))
 		{
 			extractFiles(subdir, lyrics);
+			if(separatelyrics)
+			{
+			   saveLyrics(alyricsxml, lyrics);
+			   lyrics = objFact.createFlacTags();
+			}
 		}
 	}
-	
-	// marshal the lyric object
-	// save XML to lyricsxml as UTF-8
-	saveLyrics(lyricsxml, lyrics);
+
+   if(!separatelyrics)
+   {
+      saveLyrics(alyricsxml, lyrics);
+   }
 	return 0;
 }
 	
@@ -267,15 +280,43 @@ List<File> files = new ArrayList<File>();
 
 
 
-public int update(String lyricsxml) throws Exception
+public int update(String alyricsxml) throws Exception
 {
-FlacTags lyrics = loadLyrics(lyricsxml);
+List<File> lyricstoprocess = new ArrayList<File>();
+   File lyfile = new File(alyricsxml);
+   if(lyfile.isDirectory())
+   {
+      lyricstoprocess.addAll(Arrays.asList(lyfile.listFiles(
+            new FileFilter()
+            {
+               @Override
+               public boolean accept(File pathname) {
+                  if(pathname.isDirectory())
+                     return false;
+                  String name = pathname.getName();
+                  // Make big assumption that all XML files in the directory as lyrics files!!
+                  boolean rc = name.matches("(?i)^.*\\.xml$"); 
+                  return rc;
+               }
+            })));      
+   }
+   else
+   {
+      lyricstoprocess.add(lyfile);   
+   }
+   
+  for(File flyricsxml : lyricstoprocess)
+  {
+   
+     FlacTags lyrics = loadLyrics(flyricsxml);
 
 	if(lyrics == null)
 	{
-		log.severe("No Lyrics loaded from " + lyricsxml + "!");
+		log.severe("No Lyrics loaded from " + flyricsxml + "!");
 		return 1;
 	}
+	
+	
 	String rootName = new File(rootDir).getName();
 	
 	for(Directory d : lyrics.getDirectory())
@@ -353,11 +394,17 @@ FlacTags lyrics = loadLyrics(lyricsxml);
 			}				
 		}
 	}
+  }
 	
 return 0;	
 }
 
 private FlacTags loadLyrics(String lyricsxml) throws JAXBException, FileNotFoundException
+{
+   return loadLyrics(new File(lyricsxml));
+}
+
+private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundException
 {
 	String ctxname = FlacTags.class.getPackage().getName();
 	JAXBContext jc = JAXBContext.newInstance(ctxname);

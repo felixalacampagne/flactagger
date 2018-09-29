@@ -202,20 +202,24 @@ protected void setRootDir(String root)
 	setExtUpd();
 }
 
-protected String getRootDir()
+protected String cleanPath(String p)
 {
-String root = txtRootDir.getText();
-
 // remove the annoying quotes added when using a pasted "copy as path".
 // regex is a bit of overkill but I copied it from the filechooser
 // Could check for a full path, but since it's only me who will use this
 // and consequently only a pasted full path will be quoted, I'm not going to....
-Matcher mat = Pattern.compile("^\"(\\p{Alpha}:.*)\"$").matcher(root);
-if(mat.matches())
-{
-   root = mat.group(1);
-   txtRootDir.setText(root); // Correct the displayed value
+Matcher mat = Pattern.compile("^\"(\\p{Alpha}:.*)\"$").matcher(p);
+   if(mat.matches())
+   {
+      p = mat.group(1);
+   } 
+   return p;
 }
+
+protected String getRootDir()
+{
+String root = cleanPath(txtRootDir.getText());
+
    return root;
 }
 
@@ -237,7 +241,7 @@ protected boolean isCalcMD5Enabled()
 
 protected String getFlactagFile()
 {
-	return txtFlacTagsFile.getText();
+	return cleanPath(txtFlacTagsFile.getText());
 }
 
 private void init()
