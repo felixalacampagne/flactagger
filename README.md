@@ -25,3 +25,6 @@ FLACtagger relies on;
   a way to make the git sub-modules work in GitHub and also haven't figured out how to store my
   change. For anyone who may be interested, the change is to expose the md5sum byte array in
   org.kc7bfi.jflac.metadata.StreamInfo with a public method called getMD5sum().
+ 
+ So updating this in GitHub caused my push to fail, I think. Does the push work now. More to the point
+ can I see what the difference between my local bare repo and the GitHub repo is??
