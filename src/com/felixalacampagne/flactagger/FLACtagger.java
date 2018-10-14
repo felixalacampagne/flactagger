@@ -129,7 +129,7 @@ boolean separatelyrics = false;
 		for(File subdir : getDirs(root))
 		{
 			extractFiles(subdir, lyrics);
-			if(separatelyrics)
+			if(separatelyrics && (lyrics.getDirectory().size()>0))
 			{
 			   saveLyrics(alyricsxml, lyrics);
 			   lyrics = objFact.createFlacTags();
@@ -137,7 +137,8 @@ boolean separatelyrics = false;
 		}
 	}
 
-   if(!separatelyrics)
+   //if(!separatelyrics) This means that a scan of one flac containing directory does not output anything!
+	if(lyrics.getDirectory().size()>0)
    {
       saveLyrics(alyricsxml, lyrics);
    }

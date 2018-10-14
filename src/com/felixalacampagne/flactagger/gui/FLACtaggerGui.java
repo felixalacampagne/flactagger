@@ -285,8 +285,10 @@ private void init()
     	 String sf = getRootDir();
     	 	if((sf == null) || (sf.length() < 2))
     	 		sf = ".";
-
-    	 	chooser.setCurrentDirectory(new File(sf));
+    	 	File f = new File(sf);
+    	 	if(f.isDirectory())
+    	 	   f = f.getParentFile();
+    	 	chooser.setCurrentDirectory(f);
     	 	chooser.setDialogTitle("Choose base directory");
     	 	chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     	 	chooser.setAcceptAllFileFilterUsed(false);
