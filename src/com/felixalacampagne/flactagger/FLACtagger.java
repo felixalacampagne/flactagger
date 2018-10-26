@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -466,6 +468,55 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	      if(fos != null)
 	      {
 	         try {fos.close(); } catch (Exception e) {}
+	      }
+	   }
+	   
+	   // flacaudio.md5 writing belongs somewhere else!!
+	   OutputStreamWriter osw = null;
+	   try
+	   {
+	      if(lyrics.getDirectory().size() == 1)
+	      {
+            File lxfile = new File(lyricsxml);
+            if(lxfile.isDirectory())
+            {
+               lxfile = new File(lxfile, "flacaudio.md5");
+            }
+            else
+            {
+               lxfile = new File(lxfile.getParent(), "flacaudio.md5");
+            }
+            Directory d = lyrics.getDirectory().get(0);
+            StringBuffer md5s = new StringBuffer();
+            for(FileMetadata fmd : d.getFiles().getFilemetadata())
+            {
+               md5s.append(fmd.getStrmpcmmd5()).append(" *");
+               md5s.append(fmd.getName());
+               md5s.append("\n");
+            }
+            
+            osw = new OutputStreamWriter(new FileOutputStream(lxfile));
+            osw.write(md5s.toString());
+	      }
+	   }
+      catch (IOException e)
+      {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+      }
+	   finally
+	   {
+	      if(osw != null)
+	      {
+	         try
+            {
+               osw.close();
+            }
+            catch (IOException e)
+            {
+               // TODO Auto-generated catch block
+               e.printStackTrace();
+            }
 	      }
 	   }
 
