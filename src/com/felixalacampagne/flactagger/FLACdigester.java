@@ -15,6 +15,7 @@ import org.kc7bfi.jflac.PCMProcessor;
 import org.kc7bfi.jflac.metadata.StreamInfo;
 import org.kc7bfi.jflac.util.ByteData;
 
+import com.felixalacampagne.utils.Utils;
 import com.sun.istack.internal.logging.Logger;
 
 // Requires the "JustFLAC" library
@@ -48,8 +49,7 @@ protected String calculatedMD5 = null;
 		}
 		finally
 		{
-			if(is != null)
-				is.close();
+		   Utils.safeClose(is);
 		}
 		
 		return calculatedMD5;
@@ -102,20 +102,28 @@ protected String calculatedMD5 = null;
 	public String getStreamInfoMD5(File flacFile) throws IOException
 	{
 	FileInputStream is = null;
+	   try
+	   {
+   		is = new FileInputStream(flacFile);
+   		FLACDecoder decoder = new FLACDecoder(is);
+         StreamInfo si = decoder.readStreamInfo();
+         if (si == null) 
+         {
+         	log.info("No stream info found in " + flacFile.getName());
+         }
+         else
+         {
+      	   byte[] simd5 = si.getMD5sum();
+      	   streaminfoMD5 = bytesToHex(simd5);
+         }
+         
+         return streaminfoMD5;
+	   }
+	   finally
+      {
+         Utils.safeClose(is);
+      }
 
-		is = new FileInputStream(flacFile);
-		FLACDecoder decoder = new FLACDecoder(is);
-      StreamInfo si = decoder.readStreamInfo();
-      if (si == null) 
-      {
-      	log.info("No stream info found in " + flacFile.getName());
-      }
-      else
-      {
-   	   byte[] simd5 = si.getMD5sum();
-   	   streaminfoMD5 = bytesToHex(simd5);
-      }
-      return streaminfoMD5;
 	}
 	
 	public String getStreaminfoMD5()

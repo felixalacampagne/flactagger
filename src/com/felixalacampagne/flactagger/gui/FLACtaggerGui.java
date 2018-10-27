@@ -29,7 +29,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
@@ -48,12 +47,13 @@ import com.felixalacampagne.flactagger.FLACtagger;
 
 public class FLACtaggerGui
 {
+
 private enum TaggerAction { EXTRACT, UPDATE };
 private static final String PROP_FILE = "flactagger.properties";
 private static final String PROP_ROOTDIR = "flactagger.rootdir";
 private static final String PROP_TAGFILE = "flactagger.tagfile";
 private static final String PROP_CALCMD5 = "flactagger.calcmd5";
-
+private static final String PROP_SAVEMD5 = "flactagger.savemd5";
 
 private static final String PROP_LOCATION = "flactagger.location";
 
@@ -65,6 +65,7 @@ private JFrame mainframe;
 private JTextField txtRootDir;
 private JTextField txtFlacTagsFile;
 private JCheckBox chkMD5;
+private JCheckBox chkFileMD5;
 private JButton btnExtract;
 private JButton btnUpdate;
 private JTextPane logdisplay;
@@ -152,7 +153,11 @@ protected void setEnabled(boolean enable)
 // unless there is a way to kill the SwingWorker thread.
 protected void doTask(TaggerAction action)
 {
-final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlactagFile(), isCalcMD5Enabled());
+final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlactagFile());
+
+	task.setCalcMD5(isCalcMD5Enabled());
+	task.setFileMD5(isFileMD5Enabled());
+	
 	logdisplay.setText("");
 	task.addPropertyChangeListener(new PropertyChangeListener()
 	{
@@ -239,6 +244,16 @@ protected boolean isCalcMD5Enabled()
    return chkMD5.isSelected();
 }
 
+protected void setFileMD5Enabled(boolean enabled)
+{
+   chkFileMD5.setSelected(enabled);
+}
+
+protected boolean isFileMD5Enabled()
+{
+	return chkFileMD5.isSelected();
+}
+
 protected String getFlactagFile()
 {
 	return cleanPath(txtFlacTagsFile.getText());
@@ -250,7 +265,7 @@ private void init()
   BoxLayout bl;
 
   
-  mainframe = new JFrame("FLACtagger");
+  mainframe = new JFrame("FLACtagger " + BuildInfo.VERSION);
   mainframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
   mainframe.addWindowListener(exitEvent);
   mainframe.getContentPane().setPreferredSize(new Dimension(450, 400));
@@ -376,9 +391,14 @@ private void init()
    });
   
 
-   chkMD5 = new JCheckBox("Calculate MD5");
-   chkMD5.setHorizontalTextPosition(SwingConstants.LEADING);
+   chkMD5 = new JCheckBox("Calculate MD5s");
+   chkMD5.setHorizontalTextPosition(SwingConstants.TRAILING);
    chkMD5.setToolTipText("Calculate the audio only MD5 when extracting tags (slow)");
+   
+   chkFileMD5 = new JCheckBox("Save SI MD5s");
+   chkFileMD5.setHorizontalTextPosition(SwingConstants.TRAILING);
+   chkFileMD5.setToolTipText("Save the FLAC StreamInfo embedded MD5s");
+   
 //   pnl = new JPanel(); 
 //   bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
 //   pnl.setLayout(bl);   
@@ -395,7 +415,14 @@ private void init()
    btnUpdate = new JButton("Update");
    btnUpdate.setEnabled(false);
    btnUpdate.addActionListener(updateAction);
-   pnl.add(chkMD5);
+
+   JPanel pnlchk = new JPanel(); 
+   bl = new BoxLayout(pnlchk,BoxLayout.Y_AXIS);
+   pnlchk.setLayout(bl);
+   pnlchk.add(chkFileMD5);
+   pnlchk.add(chkMD5);
+   pnl.add(pnlchk);
+
    pnl.add(btnExtract);
    pnl.add(btnUpdate);
    pnl.add(Box.createRigidArea(new Dimension(100, 0)));
@@ -441,6 +468,7 @@ private void saveSettings()
 		settings.setProperty(PROP_ROOTDIR, getRootDir());
 		settings.setProperty(PROP_TAGFILE, getFlactagFile());
 		settings.setProperty(PROP_CALCMD5, isCalcMD5Enabled() ? "Y" : "N");
+		settings.setProperty(PROP_SAVEMD5, isFileMD5Enabled() ? "Y" : "N");
 		settings.store(new FileOutputStream(pfile), "FLACtagger Gui settings file");
 		
 	}
@@ -459,6 +487,8 @@ File pfile = new File(System.getProperty("user.home"), PROP_FILE);
       setRootDir(settings.getProperty(PROP_ROOTDIR, ""));
       setFlactagFile(settings.getProperty(PROP_TAGFILE, ""));
       setCalcMD5Enabled("Y".equals(settings.getProperty(PROP_CALCMD5, "")));
+      setFileMD5Enabled("Y".equals(settings.getProperty(PROP_SAVEMD5, "")));
+
 	}
 	catch (Exception e)
 	{
@@ -484,14 +514,15 @@ TaggerAction taggeraction;
 MutableAttributeSet defaultAttr = null;
 MutableAttributeSet errorAttr = null;
 MutableAttributeSet successAttr = null;
-boolean bMD5;
-	 public TaggerTask(TaggerAction action, JTextPane logdisplay, String rootdir, String metadatafile, boolean calcMD5) 
+boolean bMD5 = false;
+boolean bFileMD5 = false;
+
+	 public TaggerTask(TaggerAction action, JTextPane logdisplay, String rootdir, String metadatafile) 
 	 { 
 		 taggeraction = action;
 		 display = logdisplay;
 		 metadataFile = metadatafile;
 		 rootDir = rootdir;
-		 bMD5 = calcMD5;
 		 
 		// defaultAttr doesn't need to be Mutable (at the moment) but doing it like this for consistency.
 		 defaultAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes()); 
@@ -519,6 +550,7 @@ boolean bMD5;
 			try
 			{
 				taggr.setMd5Enabled(bMD5);
+				taggr.setMd5fileEnabled(bFileMD5);
 				switch(taggeraction)
 				{
 				case EXTRACT:
@@ -590,6 +622,26 @@ boolean bMD5;
 	public void publishMessage(String logmessage)
 	{
 		publish(logmessage);
+	}
+
+	public boolean isCalcMD5()
+	{
+		return bMD5;
+	}
+
+	public void setCalcMD5(boolean bMD5)
+	{
+		this.bMD5 = bMD5;
+	}
+
+	public boolean isFileMD5()
+	{
+		return bFileMD5;
+	}
+
+	public void setFileMD5(boolean bFileMD5)
+	{
+		this.bFileMD5 = bFileMD5;
 	}
  }
 

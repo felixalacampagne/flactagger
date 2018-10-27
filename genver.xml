@@ -1,0 +1,20 @@
+
+<project default="genbuildinfo" name="Generate Buildinfo source file">
+<property name="buildinfo" value="src/com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
+<target name="genbuildinfo">
+    <tstamp>
+        <format property="buildtime" pattern="yy.MM.dd.HHmm" locale="en"/>
+    </tstamp>
+
+<echo file="${buildinfo}">
+package com.felixalacampagne.flactagger.gui;
+
+public class BuildInfo
+{
+public static final String VERSION = "${buildtime}";
+private BuildInfo() {}
+}
+</echo>
+</target>
+
+</project>

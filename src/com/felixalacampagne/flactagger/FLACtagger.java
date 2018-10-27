@@ -36,6 +36,7 @@ import com.felixalacampagne.flactagger.generated.flactags.FileMetadata;
 import com.felixalacampagne.flactagger.generated.flactags.FlacTags;
 import com.felixalacampagne.flactagger.generated.flactags.ObjectFactory;
 import com.felixalacampagne.utils.CmdArgMgr;
+import com.felixalacampagne.utils.Utils;
 
 public class FLACtagger
 {
@@ -87,15 +88,8 @@ private static final Logger log = Logger.getLogger(FLACtagger.class.getName());
 private final String rootDir;
 private final ObjectFactory objFact = new ObjectFactory();
 private boolean md5Enabled = false;
-public boolean isMd5Enabled() 
-{
-	return md5Enabled;
-}
+private boolean md5fileEnabled = false;
 
-public void setMd5Enabled(boolean md5Enabled) 
-{
-	this.md5Enabled = md5Enabled;
-}
 
 public FLACtagger()
 {
@@ -114,13 +108,14 @@ public FLACtagger(String root)
 public int extract(String alyricsxml) throws Exception
 {
 FlacTags lyrics =  objFact.createFlacTags();
+FlacTags alllyrics = null;
 File root = new File(rootDir);
 boolean separatelyrics = false;
 	// Dont want a real recurse search, only the current directory if it contains flacs or
 	// the sub-directories of the current directory if there are no flacs.
 	
    // Kludge!!: if alyricsxml is a directory then save each lyrics as
-   // and individual file. The individual file names is already handled by 
+   // an individual file. The individual file names is already handled by 
    // saveLyrics, just need to create a new lyrics and save it for each
    // flac directory. This could be made into a parameter... later
    separatelyrics = (new File(alyricsxml).isDirectory());
@@ -134,6 +129,11 @@ boolean separatelyrics = false;
 			if(separatelyrics && (lyrics.getDirectory().size()>0))
 			{
 			   saveLyrics(alyricsxml, lyrics);
+			   if(alllyrics == null)
+			   {
+			   	alllyrics = objFact.createFlacTags();
+			   }
+			   alllyrics.getDirectory().addAll(lyrics.getDirectory());
 			   lyrics = objFact.createFlacTags();
 			}
 		}
@@ -144,6 +144,21 @@ boolean separatelyrics = false;
    {
       saveLyrics(alyricsxml, lyrics);
    }
+	if(alllyrics == null)
+	{
+		alllyrics = lyrics;
+	}
+
+	// Makes more sense to save the flacaudio.md5 using root directory, ie. the directory
+	// searched for the .flac files. So here is the most convenient place to save
+	// the .md5 file(s)
+	if(isMd5fileEnabled())
+	{
+		
+		saveFlacaudioMD5(rootDir, alllyrics);
+	}	
+	
+	
 	return 0;
 }
 	
@@ -426,8 +441,76 @@ private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundEx
    }
 	finally
 	{
-		try{ ascii.close(); } catch (IOException e) {}
+		Utils.safeClose(ascii);
 	}
+	
+}
+
+/**
+ * 
+ * @param lyricsxml path for the md5 files 
+ * @param tags to be save. The StreamInfo MD5 entry for each file is saved into a flacaudio.md5 
+ *        file in the given directory. If tags for multiple directories are present
+ *        then one md5 will be save per directory - in theory!  
+ * @throws FileNotFoundException
+ */
+public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoundException
+{
+   // flacaudio.md5 writing belongs somewhere else!!
+   OutputStreamWriter osw = null;
+   File rootdir = null;
+   try
+   {
+      for(Directory d : tags.getDirectory())
+      {
+
+      	if(rootdir == null)
+      	{
+      		rootdir = new File(lyricsxml);
+      		if(rootdir.getName().equals(d.getName()))
+      		{
+      			rootdir = rootdir.getParentFile();
+      		}
+      	}
+      	
+      	File lxfile = new File(rootdir, d.getName());
+      	if(lxfile.isDirectory())
+      	{
+      		lxfile = new File(lxfile, "folderaudio.md5");
+      	}
+      	else
+      	{
+      		lxfile = new File(rootdir, d.getName() + "_folderaudio.md5");
+      	}
+      	
+      	
+      	if(lxfile.exists())
+      	{
+      	   lxfile = new File(lxfile.getParentFile(), "folderaudio_" + Utils.getTimestampFN() + ".md5");
+      	}
+      	
+      	StringBuffer md5s = new StringBuffer();
+         for(FileMetadata fmd : d.getFiles().getFilemetadata())
+         {
+            md5s.append(fmd.getStrmpcmmd5()).append(" *");
+            md5s.append(fmd.getName());
+            md5s.append("\n");
+         }
+         
+         osw = new OutputStreamWriter(new FileOutputStream(lxfile));
+         osw.write(md5s.toString());
+         Utils.safeClose(osw);
+      }
+   }
+   catch (IOException e)
+   {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+   }
+   finally
+   {
+   	Utils.safeClose(osw);
+   }
 	
 }
 
@@ -437,6 +520,9 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	String ctxname = FlacTags.class.getPackage().getName();
 	JAXBContext jc = JAXBContext.newInstance(ctxname);	
 	FileOutputStream fos = null;
+	
+
+		
 	   Marshaller m = jc.createMarshaller();
 	   m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 	   JAXBElement<FlacTags> o = objFact.createFlactags(lyrics);
@@ -446,9 +532,7 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	      if(lxfile.isDirectory())
 	      {
 	         // If a directory is specified then create the lyrics file using the 
-	         // lyric directory in the directory.
-	         // Eventually it might be nicer to write each directories lyric to a 
-	         // separate file, but that's maybe something for the Gui to handle
+	         // lyric directory as the name in the directory.
 	         if(lyrics.getDirectory().size() > 0)
 	         {
 	            lxfile = new File(lxfile, lyrics.getDirectory().get(0).getName() + ".xml");
@@ -465,60 +549,9 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	   }
 	   finally
 	   {
-	      if(fos != null)
-	      {
-	         try {fos.close(); } catch (Exception e) {}
-	      }
+	   	Utils.safeClose(fos);
 	   }
 	   
-	   // flacaudio.md5 writing belongs somewhere else!!
-	   OutputStreamWriter osw = null;
-	   try
-	   {
-	      if(lyrics.getDirectory().size() == 1)
-	      {
-            File lxfile = new File(lyricsxml);
-            if(lxfile.isDirectory())
-            {
-               lxfile = new File(lxfile, "flacaudio.md5");
-            }
-            else
-            {
-               lxfile = new File(lxfile.getParent(), "flacaudio.md5");
-            }
-            Directory d = lyrics.getDirectory().get(0);
-            StringBuffer md5s = new StringBuffer();
-            for(FileMetadata fmd : d.getFiles().getFilemetadata())
-            {
-               md5s.append(fmd.getStrmpcmmd5()).append(" *");
-               md5s.append(fmd.getName());
-               md5s.append("\n");
-            }
-            
-            osw = new OutputStreamWriter(new FileOutputStream(lxfile));
-            osw.write(md5s.toString());
-	      }
-	   }
-      catch (IOException e)
-      {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
-      }
-	   finally
-	   {
-	      if(osw != null)
-	      {
-	         try
-            {
-               osw.close();
-            }
-            catch (IOException e)
-            {
-               // TODO Auto-generated catch block
-               e.printStackTrace();
-            }
-	      }
-	   }
 
 }
 
@@ -571,6 +604,26 @@ public String getAudioDigest(File flacfile, FileMetadata ftx)
 	}
 	return dig;
 
+}
+
+public boolean isMd5fileEnabled()
+{
+	return md5fileEnabled;
+}
+
+public void setMd5fileEnabled(boolean md5fileEnabled)
+{
+	this.md5fileEnabled = md5fileEnabled;
+}
+
+public boolean isMd5Enabled() 
+{
+	return md5Enabled;
+}
+
+public void setMd5Enabled(boolean md5Enabled) 
+{
+	this.md5Enabled = md5Enabled;
 }
 
 
