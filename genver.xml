@@ -2,6 +2,7 @@
 <project default="genbuildinfo" name="Generate Buildinfo source file">
 <property name="buildinfo" value="src/com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
 <target name="genbuildinfo">
+	<echo>genbuildinfo target invoked</echo>
     <tstamp>
         <format property="buildtime" pattern="yy.MM.dd.HHmm" locale="en"/>
     </tstamp>
@@ -17,11 +18,15 @@ private BuildInfo() {}
 </echo>
 </target>
 
-	<target name="autobuild">
+	<target name="autobuild" depends="genbuildinfo">
 		<!-- Dummy target because it appears Eclipse is constantly performing builds
 		     including after a git update which causes the updated flags to 
 		     show, even though nothing has been changed. 
 		  -->
-		
+		<echo>autobuild target invoked</echo>
 	</target>
+   <target name="clean">
+      <echo>clean target invoked</echo>
+   </target>
+	
 </project>

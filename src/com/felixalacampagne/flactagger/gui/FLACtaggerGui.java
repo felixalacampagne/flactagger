@@ -497,7 +497,9 @@ File pfile = new File(System.getProperty("user.home"), PROP_FILE);
 	}
 }
 
-
+// Gratuitous change to see if a buildinfo is generated.
+// ant task is run but - no generation. 
+// more changes
 public static void main(String[] args)
 {
 	Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
