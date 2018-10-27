@@ -28,5 +28,7 @@ private BuildInfo() {}
    <target name="clean">
       <echo>clean target invoked</echo>
    </target>
-	
+   <target name="post-clean">
+      <echo>post-clean target invoked</echo>
+   </target>
 </project>
