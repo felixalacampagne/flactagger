@@ -301,6 +301,7 @@ List<File> files = new ArrayList<File>();
 public int update(String alyricsxml) throws Exception
 {
 List<File> lyricstoprocess = new ArrayList<File>();
+File rootdirf = new File(rootDir);
    File lyfile = new File(alyricsxml);
    if(lyfile.isDirectory())
    {
@@ -328,90 +329,110 @@ List<File> lyricstoprocess = new ArrayList<File>();
    
      FlacTags lyrics = loadLyrics(flyricsxml);
 
-	if(lyrics == null)
-	{
-		log.severe("No Lyrics loaded from " + flyricsxml + "!");
-		return 1;
-	}
-	
-	
-	String rootName = new File(rootDir).getName();
-	
-	for(Directory d : lyrics.getDirectory())
-	{
-	   File dir;
-	   // If album directory was specified as root then use it
-	   if(rootName.equals(d.getName()))
-	   {
-	      dir = new File(rootDir);
-	   }
-	   else
-	   {
-	      // If album directory is not the same as the root then assume it is in the root
-	      dir = new File(rootDir, d.getName());
-	   }
-		if(!dir.exists())
-		{
-			log.severe("Directory not found: " + dir.getAbsolutePath());
-			continue;
-		}
-		log.info("Processing Directory: " + d.getName());
+     if(lyrics == null)
+     {
+        log.severe("No Lyrics loaded from " + flyricsxml + "!");
+        return 1;
+     }
 
-		FileList files = d.getFiles();
-		for(FileMetadata ft : files.getFilemetadata())
-		{
-			String trimlyric = ft.getLyric();
-			if(trimlyric == null)
-				continue;
-			trimlyric = trimlyric.trim();
-			if(trimlyric.length() < 1)
-				continue;
+     String rootName = rootdirf.getName();
+	
+     for(Directory d : lyrics.getDirectory())
+     {
+        File dir;
+        // If album directory was specified as root then use it
+        if(rootName.equals(d.getName()))
+        {
+           dir = new File(rootDir);
+        }
+        else
+        {
+           // If album directory is not the same as the root then assume it is in the root
+           dir = new File(rootDir, d.getName());
+        }
+        if(!dir.exists())
+        {
+           // Revert to using the rootDir in case flac files were relocated (eg. when reencoded to a subdir of
+           // the original album dir). This possibly makes one of the file.exists checks below redundant unless
+           // maybe when multiple directories are being processed. Anyway I'll leave it in for now.
+           dir = new File(rootDir);
+        }
+        log.info("Processing FlacTag Directory: " + d.getName());
+
+        FileList files = d.getFiles();
+        for(FileMetadata ft : files.getFilemetadata())
+        {
+           String trimlyric = ft.getLyric();
+           if(trimlyric == null)
+              continue;
+           trimlyric = trimlyric.trim();
+           if(trimlyric.length() < 1)
+              continue;
 			
-			// JAXB strips out the CRs but apparently they must be there, at least for mp3tag,
-			// so must put them back before adding to the tag. The ? is supposed to avoid
-			// the case where the CRs are already present... but can't figure out how that works...
-			// unless ? means 0 or 1... it does!
-			trimlyric = trimlyric.replaceAll("\r?\n", "\r\n");
-			File f = new File(dir, ft.getName());
+           // JAXB strips out the CRs but apparently they must be there, at least for mp3tag,
+           // so must put them back before adding to the tag. The ? is supposed to avoid
+           // the case where the CRs are already present... but can't figure out how that works...
+           // unless ? means 0 or 1... it does!
+           trimlyric = trimlyric.replaceAll("\r?\n", "\r\n");
+           File f = new File(dir, ft.getName());
 			
+           // Above directory assumptions don't always work. Rather than break the
+           // multi-directory processing, which usually works the way I want it to will try to find missing files
+           // by checking for them in some other possible places, eg. the directory of flactag file or the root directory.
+           if(!f.exists())
+           {
+              f = new File(flyricsxml.getParentFile(), ft.getName());
+              if(!f.exists())
+              {
+                 f = new File(rootdirf, ft.getName());
+                 if(!f.exists())
+                 {
+                    log.severe("File "+ ft.getName() + " not found in " 
+                     + dir.getAbsolutePath() + " or " 
+                     + flyricsxml.getParentFile().getAbsolutePath() + " or "
+                     + rootdirf.getAbsolutePath());
+                    continue;
+                 }
+              }
+           }
 			
-			String fdisp = getFileDispName(f);
-			log.info("Loading: " + fdisp);
-			try
-			{
-			AudioFile af = AudioFileIO.read(f);
+           String fdisp = getFileDispName(f);
+           log.info("Loading: " + fdisp);
+           try
+           {
+              AudioFile af = AudioFileIO.read(f);
 			
-				Tag tag = af.getTag();
-				if((tag != null) && (tag instanceof FlacTag ))
-				{
-					if(tag.hasField(FLAC_LYRICS_TAG))
-					{
-						String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
-						if(trimlyric.equals(currlyric))
-						{
-							log.info("Lyric is already present, no update required: "+ fdisp);
-							continue;
-						}
-						log.info("Removing existing lyric from "+ fdisp);
-						tag.deleteField(FLAC_LYRICS_TAG);
-					}
-					// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-					TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
-					tag.addField(lyrictf);
-					log.info("updating: " + fdisp);
-					af.commit();
-				}
-				else
-				{
-					log.severe("WARN: No or none-FLAC tag, unable to update: " + fdisp);
-				}
-			}
-			catch(Exception ex)
-			{
-				log.severe("Exception reading " + fdisp + ": " + ex.getMessage());
-			}				
-		}
-	}
+              Tag tag = af.getTag();
+              if((tag != null) && (tag instanceof FlacTag ))
+              {
+                 if(tag.hasField(FLAC_LYRICS_TAG))
+                 {
+                    String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
+                    if(trimlyric.equals(currlyric))
+                    {
+                       log.info("Lyric is already present, no update required: "+ fdisp);
+                       continue;
+                    }
+                    log.info("Removing existing lyric from "+ fdisp);
+                    tag.deleteField(FLAC_LYRICS_TAG);
+                 }
+                 // TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
+                 TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
+                 tag.addField(lyrictf);
+                 log.info("updating: " + fdisp);
+                 af.commit();
+              }
+              else
+              {
+                 log.severe("WARN: No or none-FLAC tag, unable to update: " + fdisp);
+              }
+           }
+           catch(Exception ex)
+           {
+              log.severe("Exception reading " + fdisp + ": " + ex.getMessage());
+           }				
+        }
+     }
   }
 	
 return 0;	
