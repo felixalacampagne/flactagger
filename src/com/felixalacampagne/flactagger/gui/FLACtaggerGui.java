@@ -194,7 +194,10 @@ protected void setExtUpd()
 String r= getRootDir();
 String t = getFlactagFile();
 boolean b = false;
-	if((r != null) && (r.length()>0) && (t != null) && (t.length()>0))
+	
+	//if((r != null) && (r.length()>0) && (t != null) && (t.length()>0))
+	// empty output file is now allowed, filename defaults to rootDir name in rootDir
+	if((r != null) && (r.length()>0))
 	{
 		b = true;
 	}
@@ -344,7 +347,8 @@ private void init()
   txtFlacTagsFile = new JTextField();
   JLabel lbl2 = new JLabel("Flac tags file:");
   lbl2.setLabelFor(txtFlacTagsFile);
-  lbl2.setToolTipText("File to receive extracted tags or file containing tags to perform update with.");
+  lbl2.setToolTipText("<html>Extract:<ul><li>filename: for all tags<li>directory: individual tag files<li>empty: tags in flac directories</ul>" +
+  "Update:<ul><li>filename: load tags from just this file<li>directory: load tags from all .xml files in directory</ul></html>");
   JButton btnTagFile = new JButton("...");
   pnl = new JPanel(); 
   bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
@@ -567,7 +571,7 @@ boolean bFileMD5 = false;
 			}
 			catch (Exception e)
 			{
-				publish(MSG_EXCEPTION);
+				log.log(Level.SEVERE, "Exception performing background task.", e);
 				return 2;
 			}
 			finally

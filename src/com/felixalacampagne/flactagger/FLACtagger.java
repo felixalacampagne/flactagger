@@ -8,8 +8,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -111,9 +115,28 @@ FlacTags lyrics =  objFact.createFlacTags();
 FlacTags alllyrics = null;
 File root = new File(rootDir);
 boolean separatelyrics = false;
+boolean flacdirlyrics = false;
 	// Dont want a real recurse search, only the current directory if it contains flacs or
-	// the sub-directories of the current directory if there are no flacs.
+	// the sub-directories of the current directory if there are no flacs in the current dir.
 	
+	// Should really just save the lyrics files as for the folderaudio files but instead...
+	// Kludge upon kludge!!: If the output lyrics file is not specified then assume
+	// it is should be written into the rootdir using the directory as the file name
+	// Ugh! That's OK when the rootDir contains the flacs but not quite as well
+	// when the rootDir contains album sub-dirs: the xml files go into the directory
+	// containing the sub-dirs instead of the same directory as the flacs. And this
+	// behaviour is sometimes what I want, and sometimes not what I want.
+	// Maybe I can kludge it a bit more:
+	// alyricsxml is present AND a directory: separate lyric files into the specified directory
+	// alyricsxml is absent: separate lyrics files into the flac directory
+	// alyricsxml is present AND a filename: all lyrics go into the same file
+
+	if (alyricsxml==null || alyricsxml.isEmpty())
+	{
+		// this implies that separatelyrics=true assuming rootDir is a valid directory
+		alyricsxml = rootDir;
+		flacdirlyrics = true;
+	}
    // Kludge!!: if alyricsxml is a directory then save each lyrics as
    // an individual file. The individual file names is already handled by 
    // saveLyrics, just need to create a new lyrics and save it for each
@@ -123,12 +146,18 @@ boolean separatelyrics = false;
 	// extract flacs in rootDir
 	if(extractFiles(root, lyrics) == 0)
 	{
+		// This means the root did not contain flacs and is therefore assumed to contain sub-dirs which do contain flacs
 		for(File subdir : getDirs(root))
 		{
 			extractFiles(subdir, lyrics);
 			if(separatelyrics && (lyrics.getDirectory().size()>0))
 			{
-			   saveLyrics(alyricsxml, lyrics);
+			String lyricsdir = alyricsxml;
+				if(flacdirlyrics)
+				{
+					lyricsdir = subdir.getAbsolutePath(); 
+				}
+			   saveLyrics(lyricsdir, lyrics);
 			   if(alllyrics == null)
 			   {
 			   	alllyrics = objFact.createFlacTags();
@@ -475,6 +504,9 @@ private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundEx
  *        then one md5 will be save per directory - in theory!  
  * @throws FileNotFoundException
  */
+public static final String FA_NAME="folderaudio";
+public static final String FA_EXTN=".md5";
+public static final String FA_FILENAME= FA_NAME + FA_EXTN;
 public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoundException
 {
    // flacaudio.md5 writing belongs somewhere else!!
@@ -497,17 +529,21 @@ public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoun
       	File lxfile = new File(rootdir, d.getName());
       	if(lxfile.isDirectory())
       	{
-      		lxfile = new File(lxfile, "folderaudio.md5");
+      		lxfile = new File(lxfile, FA_FILENAME);
       	}
       	else
       	{
-      		lxfile = new File(rootdir, d.getName() + "_folderaudio.md5");
+      		lxfile = new File(rootdir, d.getName() + "_" + FA_FILENAME);
       	}
       	
       	
       	if(lxfile.exists())
       	{
-      	   lxfile = new File(lxfile.getParentFile(), "folderaudio_" + Utils.getTimestampFN() + ".md5");
+      		// Backup the previous file. Handle name with directory prefix
+      		String name = lxfile.getName();
+      		name = name.replace(FA_FILENAME, FA_NAME + "_" + Utils.getTimestampFN(lxfile.lastModified()) + FA_EXTN);
+      	   File rnfile = new File(lxfile.getParentFile(), name);
+      	   Files.move(lxfile.toPath(), rnfile.toPath(),  StandardCopyOption.REPLACE_EXISTING);
       	}
       	
       	StringBuffer md5s = new StringBuffer();

@@ -63,8 +63,18 @@ public class Utils
 	
    public static String getTimestampFN()
    {
+      return getTimestampFN(new Date());
+   }
+
+   public static String getTimestampFN(long date)
+   {
+      return getTimestampFN(new Date(date));
+   }
+   public static String getTimestampFN(Date date)
+   {
    SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmm");
       
-      return sdf.format(new Date());
+      return sdf.format(date);
    }
+
 }
