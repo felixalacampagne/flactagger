@@ -331,7 +331,17 @@ public int update(String alyricsxml) throws Exception
 {
 List<File> lyricstoprocess = new ArrayList<File>();
 File rootdirf = new File(rootDir);
-   File lyfile = new File(alyricsxml);
+File lyfile = null;
+   // If no lyrics file specified assume it is in the rootDir with rootDir name
+   if((alyricsxml==null) || alyricsxml.isEmpty())
+   {
+      lyfile = new File(rootDir, rootdirf.getName() + ".xml");
+   }
+   else
+   {
+      lyfile = new File(alyricsxml);
+   }
+   
    if(lyfile.isDirectory())
    {
       lyricstoprocess.addAll(Arrays.asList(lyfile.listFiles(
@@ -350,6 +360,11 @@ File rootdirf = new File(rootDir);
    }
    else
    {
+      if(! lyfile.isFile())
+      {
+         log.severe("No Lyrics specifed or " + lyfile.getAbsolutePath() + "does not exist!");
+         return 1;
+      }
       lyricstoprocess.add(lyfile);   
    }
    
