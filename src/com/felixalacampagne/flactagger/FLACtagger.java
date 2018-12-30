@@ -332,10 +332,18 @@ public int update(String alyricsxml) throws Exception
 List<File> lyricstoprocess = new ArrayList<File>();
 File rootdirf = new File(rootDir);
 File lyfile = null;
+
+   // Need to reproduce behaviour of extract when only base directory is specified:
+   // - if dir contains flacs then generate the xml in the directory named after directory
+   // - if no flacs then search one level of sub-dirs for flacs and generate the xml in the sub-directory
+   //   named after the sub-directory.
+   
    // If no lyrics file specified assume it is in the rootDir with rootDir name
    if((alyricsxml==null) || alyricsxml.isEmpty())
    {
       lyfile = new File(rootDir, rootdirf.getName() + ".xml");
+      if(!lyfile.exists())
+         lyfile = new File(rootDir);
    }
    else
    {
@@ -344,19 +352,31 @@ File lyfile = null;
    
    if(lyfile.isDirectory())
    {
-      lyricstoprocess.addAll(Arrays.asList(lyfile.listFiles(
-            new FileFilter()
+      FileFilter xmlfilter = new FileFilter()
+      {
+         @Override
+         public boolean accept(File pathname) {
+            if(pathname.isDirectory())
+               return false;
+            String name = pathname.getName();
+            // Make big assumption that all XML files in the directory as lyrics files!!
+            boolean rc = name.matches("(?i)^.*\\.xml$"); 
+            return rc;
+         }
+      };
+      lyricstoprocess.addAll(Arrays.asList(lyfile.listFiles(xmlfilter)));   
+      
+      // If there are no lyrics files in root dir then maybe they are in the sub-dirs...
+      if(lyricstoprocess.size() == 0)
+      {
+         for(File subf: lyfile.listFiles())
+         {
+            if(subf.isDirectory())
             {
-               @Override
-               public boolean accept(File pathname) {
-                  if(pathname.isDirectory())
-                     return false;
-                  String name = pathname.getName();
-                  // Make big assumption that all XML files in the directory as lyrics files!!
-                  boolean rc = name.matches("(?i)^.*\\.xml$"); 
-                  return rc;
-               }
-            })));      
+               lyricstoprocess.addAll(Arrays.asList(subf.listFiles(xmlfilter))); 
+            }
+         }
+      }
    }
    else
    {
