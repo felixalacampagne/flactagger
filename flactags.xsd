@@ -29,6 +29,15 @@
            being called 'list', which looks worse. There maybe a way to avoid this with the .xjb
            binding but not really worth the hassle. It's nicer to have the XML look good so I'll
            live withthe strange looking method name.
+           
+           NB. Wanted tracknumber to be an integer but in typical Java idiocy this maps to
+           a BigInteger type which is absurd. I tried changing this via the .xjb
+           jxb:globalBindings giving   jxb:javaType name="java.lang.Integer" but this 
+           generated invalid source code with an annotation like "XmlJavaTypeAdapter(Adapter1 .class)".
+           There wasn't even an Adapter1.java file, so given that life is too short to fork with this
+           anymore I'll stick to a string for now. Maybe one day the Java committee will pull it's 
+           collective head out of it's ass and actually sit down and think "how will people actually use
+           this shirt".
        -->
       <xs:element type="FileMetadata" name="filemetadata" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
@@ -36,13 +45,15 @@
 
   <xs:complexType name="FileMetadata">
     <xs:sequence>
-      <xs:element type="xs:string" name="name"/>
-      <xs:element type="xs:string" name="artist"        minOccurs="0"/>
-      <xs:element type="xs:string" name="album"         minOccurs="0"/>
-      <xs:element type="xs:string" name="filemd5"       minOccurs="0"/>
-      <xs:element type="xs:string" name="calcpcmmd5"    minOccurs="0"/>
-      <xs:element type="xs:string" name="strmpcmmd5"    minOccurs="0"/>
-      <xs:element type="xs:string" name="lyric"         minOccurs="0"/>
+      <xs:element type="xs:string"  name="name"/>
+      <xs:element type="xs:string"  name="tracknumber"   minOccurs="0"/>
+      <xs:element type="xs:string"  name="artist"        minOccurs="0"/>
+      <xs:element type="xs:string"  name="album"         minOccurs="0"/>
+      <xs:element type="xs:string"  name="title"         minOccurs="0"/>
+      <xs:element type="xs:string"  name="filemd5"       minOccurs="0"/>
+      <xs:element type="xs:string"  name="calcpcmmd5"    minOccurs="0"/>
+      <xs:element type="xs:string"  name="strmpcmmd5"    minOccurs="0"/>
+      <xs:element type="xs:string"  name="lyric"         minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 

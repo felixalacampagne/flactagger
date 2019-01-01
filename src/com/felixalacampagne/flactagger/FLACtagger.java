@@ -185,6 +185,7 @@ boolean flacdirlyrics = false;
 	{
 		
 		saveFlacaudioMD5(rootDir, alllyrics);
+		saveCuesheet(rootDir, alllyrics); // TODO: give this it's own option
 	}	
 	
 	
@@ -256,6 +257,8 @@ public FileMetadata getFileMetadata(File f)
 		// Artist, album, lyric, directory name, file name
 		ftx = objFact.createFileMetadata();
 		ftx.setName(f.getName());
+		;
+		ftx.setTracknumber(tag.getFirst(FieldKey.TRACK));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
 		String lyric = tag.getFirst(FLAC_LYRICS_TAG);
@@ -529,6 +532,91 @@ private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundEx
 		Utils.safeClose(ascii);
 	}
 	
+}
+
+/**
+ * Save a dummy cuesheet a la CUETools but without the annoying file extensions.
+ * Directory/Filename handling copied from saveFlacaudioMD5 since the cuesheet should
+ * always go into the directory containing the flacs.
+ * 
+ * TODO: refactor the destination directory determining code into separator function  
+ * @param lyricsxml
+ * @param tags
+ * @throws FileNotFoundException
+ */
+public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundException
+{
+   // flacaudio.md5 writing belongs somewhere else!!
+   OutputStreamWriter osw = null;
+   File rootdir = null;
+   try
+   {
+      for(Directory d : tags.getDirectory())
+      {
+
+         if(rootdir == null)
+         {
+            rootdir = new File(lyricsxml);
+            if(rootdir.getName().equals(d.getName()))
+            {
+               rootdir = rootdir.getParentFile();
+            }
+         }
+         
+         File lxfile = new File(rootdir, d.getName());
+         if(lxfile.isDirectory())
+         {
+            lxfile = new File(lxfile, d.getName() + ".cue");
+         }
+         else
+         {
+            lxfile = new File(rootdir, d.getName() + ".cue");
+         }
+         
+         
+
+         StringBuffer cue = new StringBuffer();
+         boolean bHeader = false;
+         cue.append("REM COMMENT \"FLACtagger generated CUE sheet\"\n");
+         int i=0;
+         
+         for(FileMetadata fmd : d.getFiles().getFilemetadata())
+         {
+            if(!bHeader)
+            {
+               cue.append("PERFORMER \"").append(fmd.getArtist()).append("\"\n");
+               cue.append("TITLE \"").append(fmd.getAlbum()).append("\"\n"); 
+               bHeader = true;
+            }
+            cue.append("FILE \"").append(fmd.getName()).append("\" WAVE\n");
+            i++;
+            Integer iT = Utils.str2Int(fmd.getTracknumber());
+            
+            // If tracknumber is missing fallback to using the i count
+            if(iT == null)
+            {
+               iT = Integer.valueOf(i);
+            }
+
+            cue.append(String.format("   TRACK %02d AUDIO\n", iT.intValue()));
+            cue.append("   INDEX 01 00:00:00\n");
+         }
+         
+         osw = new OutputStreamWriter(new FileOutputStream(lxfile));
+         osw.write(cue.toString());
+         Utils.safeClose(osw);
+      }
+   }
+   catch (IOException e)
+   {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+   }
+   finally
+   {
+      Utils.safeClose(osw);
+   }
+   
 }
 
 /**

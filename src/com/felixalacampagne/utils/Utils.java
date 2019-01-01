@@ -76,5 +76,19 @@ public class Utils
       
       return sdf.format(date);
    }
+   
+   public static Integer str2Int(String str)
+   {
+   Integer i = null;
+      try
+      {
+         i = Integer.valueOf(str);
+      }
+      catch(Exception ex)
+      {
+         // Ignore exceptions
+      }
+      return i;
+   }
 
 }
