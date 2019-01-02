@@ -30,14 +30,17 @@
            binding but not really worth the hassle. It's nicer to have the XML look good so I'll
            live withthe strange looking method name.
            
-           NB. Wanted tracknumber to be an integer but in typical Java idiocy this maps to
-           a BigInteger type which is absurd. I tried changing this via the .xjb
-           jxb:globalBindings giving   jxb:javaType name="java.lang.Integer" but this 
-           generated invalid source code with an annotation like "XmlJavaTypeAdapter(Adapter1 .class)".
-           There wasn't even an Adapter1.java file, so given that life is too short to fork with this
-           anymore I'll stick to a string for now. Maybe one day the Java committee will pull it's 
-           collective head out of it's ass and actually sit down and think "how will people actually use
-           this shirt".
+           Wanted tracknumber to be an integer but, in typical Java how-can-we-make-this-useless fashion,
+           this maps to BigInteger in the generated code. 
+           I tried changing this via the .xjb (hint: jxb:javaType name="java.lang.Integer") but the 
+           generated source code contained invalid annotations like "XmlJavaTypeAdapter(Adapter1 .class)".
+           Finally found a workaround (thank you Google!!) using "xs:int". Normally xs:int is translated to a 
+           native Java int but when the field is optional, and therefore needs to have a null value, an 
+           Integer is used instead!
+           NB. Dropped idea of setting restrictions on the range of tracknumber;
+           1) Restrictions are not implemented in the generated Java code
+           2) FLACtagger must use whatever tracknumber value is in the FLAC file
+              so cannot impose arbitrary restrictions on the range.         
        -->
       <xs:element type="FileMetadata" name="filemetadata" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
@@ -46,7 +49,7 @@
   <xs:complexType name="FileMetadata">
     <xs:sequence>
       <xs:element type="xs:string"  name="name"/>
-      <xs:element type="xs:string"  name="tracknumber"   minOccurs="0"/>
+      <xs:element type="xs:int   "  name="tracknumber"   minOccurs="0"/>
       <xs:element type="xs:string"  name="artist"        minOccurs="0"/>
       <xs:element type="xs:string"  name="album"         minOccurs="0"/>
       <xs:element type="xs:string"  name="title"         minOccurs="0"/>

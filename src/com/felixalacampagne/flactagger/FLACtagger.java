@@ -258,7 +258,7 @@ public FileMetadata getFileMetadata(File f)
 		ftx = objFact.createFileMetadata();
 		ftx.setName(f.getName());
 		;
-		ftx.setTracknumber(tag.getFirst(FieldKey.TRACK));
+		ftx.setTracknumber(Utils.str2Int(tag.getFirst(FieldKey.TRACK)));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
 		String lyric = tag.getFirst(FLAC_LYRICS_TAG);
@@ -590,7 +590,7 @@ public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundExc
             }
             cue.append("FILE \"").append(fmd.getName()).append("\" WAVE\n");
             i++;
-            Integer iT = Utils.str2Int(fmd.getTracknumber());
+            Integer iT = fmd.getTracknumber();
             
             // If tracknumber is missing fallback to using the i count
             if(iT == null)
