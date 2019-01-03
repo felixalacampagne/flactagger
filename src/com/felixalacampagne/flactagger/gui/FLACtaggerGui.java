@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -33,6 +34,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
+import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -69,6 +71,7 @@ private JCheckBox chkFileMD5;
 private JButton btnExtract;
 private JButton btnUpdate;
 private JTextPane logdisplay;
+private TransferHandler dirtfrdnd;
 
 private Properties settings = new Properties();
 
@@ -279,6 +282,8 @@ private void init()
   // Root dir - where to find the directories
   //   Label, textbox to display value, button for dir chooser
   txtRootDir = new JTextField();
+  txtRootDir.setTransferHandler(new DirectorynameTransferHandler(txtRootDir.getTransferHandler()));
+  
   JLabel lbl1 = new JLabel("Base directory:");
   lbl1.setLabelFor(txtRootDir); 
   lbl1.setToolTipText("Directory containing the directories to scan for FLAC files. All sub-directories in the base directory will be scanned.");

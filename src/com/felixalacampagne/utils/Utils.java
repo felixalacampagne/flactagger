@@ -77,6 +77,11 @@ public class Utils
       return sdf.format(date);
    }
    
+   /**
+    * Convert string to Integer
+    * @param str
+    * @return Integer value, null if str is not a valid decimal number
+    */
    public static Integer str2Int(String str)
    {
    Integer i = null;

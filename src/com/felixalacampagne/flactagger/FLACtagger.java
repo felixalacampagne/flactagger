@@ -257,7 +257,7 @@ public FileMetadata getFileMetadata(File f)
 		// Artist, album, lyric, directory name, file name
 		ftx = objFact.createFileMetadata();
 		ftx.setName(f.getName());
-		;
+		
 		ftx.setTracknumber(Utils.str2Int(tag.getFirst(FieldKey.TRACK)));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
@@ -539,7 +539,6 @@ private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundEx
  * Directory/Filename handling copied from saveFlacaudioMD5 since the cuesheet should
  * always go into the directory containing the flacs.
  * 
- * TODO: refactor the destination directory determining code into separator function  
  * @param lyricsxml
  * @param tags
  * @throws FileNotFoundException
@@ -564,35 +563,33 @@ public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundExc
          }
          
          File lxfile = new File(rootdir, d.getName());
-         if(lxfile.isDirectory())
+         if(!lxfile.isDirectory())
          {
-            lxfile = new File(lxfile, d.getName() + ".cue");
+            lxfile = rootdir;
          }
-         else
-         {
-            lxfile = new File(rootdir, d.getName() + ".cue");
-         }
-         
+         lxfile = new File(lxfile, d.getName() + ".cue");
          
 
          StringBuffer cue = new StringBuffer();
-         boolean bHeader = false;
          cue.append("REM COMMENT \"FLACtagger generated CUE sheet\"\n");
+
          int i=0;
-         
          for(FileMetadata fmd : d.getFiles().getFilemetadata())
          {
-            if(!bHeader)
+         	// i is used to provide the track number in case it is not present in the metadata
+         	// but can also use it to indicate when to write the top level cue data  
+            if(i == 0)
             {
                cue.append("PERFORMER \"").append(fmd.getArtist()).append("\"\n");
                cue.append("TITLE \"").append(fmd.getAlbum()).append("\"\n"); 
-               bHeader = true;
             }
-            cue.append("FILE \"").append(fmd.getName()).append("\" WAVE\n");
             i++;
+            cue.append("FILE \"").append(fmd.getName()).append("\" WAVE\n");
+
             Integer iT = fmd.getTracknumber();
             
             // If tracknumber is missing fallback to using the i count
+            // which assumes that tracknumber is going to be missing for all tracks.
             if(iT == null)
             {
                iT = Integer.valueOf(i);
