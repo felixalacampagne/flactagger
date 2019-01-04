@@ -40,3 +40,12 @@ Something uploaded with no password prompts!! Let's go for two in a row.
 
 Now need to figure out how to get the change I made to JustFLAC available in GitHub. At the moment the
 sub-modules appear as references but they don't go anywhere in GitHub when they are clicked.
+
+
+Jeezus Wept this Git thing SUCKS!
+I got my change to JustFLAC accepted into the master project, so no more need for the GitHub fork that I created.
+This is an everyday occurrence, right? So replacing my "fork" with the master "fork" should be straight forward.
+Fork NO! I tried changing the URL of the submodule via eclipse - no change.
+In the end I had to delete the justFLAC source code, delete the JustFLAC entry(s) from .gitmodules and then
+delete the JustFLAC directory in .git/modules - it is completely absurd! Now to see if the changes get pushed
+to GitHub si it refers to the master project instead of my version.
