@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -34,7 +33,6 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
-import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -71,7 +69,6 @@ private JCheckBox chkFileMD5;
 private JButton btnExtract;
 private JButton btnUpdate;
 private JTextPane logdisplay;
-private TransferHandler dirtfrdnd;
 
 private Properties settings = new Properties();
 
@@ -195,9 +192,10 @@ final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlac
 protected void setExtUpd()
 {
 String r= getRootDir();
-String t = getFlactagFile();
 boolean b = false;
 	
+   getFlactagFile(); // Clean the filename before testing
+   
 	//if((r != null) && (r.length()>0) && (t != null) && (t.length()>0))
 	// empty output file is now allowed, filename defaults to rootDir name in rootDir
 	if((r != null) && (r.length()>0))

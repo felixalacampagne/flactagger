@@ -2,13 +2,9 @@ package com.felixalacampagne.flactagger;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.kc7bfi.jflac.FLACDecoder;
 import org.kc7bfi.jflac.PCMProcessor;

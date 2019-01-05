@@ -3,12 +3,15 @@ package com.felixalacampagne.flactagger;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AsciiFilterInputStream extends FilterInputStream
 {
 private final static byte REPLACE_CHAR = 0x2A;  // 0x2A - ASCII asterix
 private final static byte QUOTE_CHAR = 0x27; // 0x27 = ASCII single quote
 private final static byte DOUBLEQUOTE_CHAR = 0x22; // 0x22 - ASCI double quote
+private static final Logger log = Logger.getLogger(AsciiFilterInputStream.class.getName());
 	public AsciiFilterInputStream(InputStream in)
 	{
 		super(in);
@@ -67,7 +70,26 @@ private final static byte DOUBLEQUOTE_CHAR = 0x22; // 0x22 - ASCI double quote
 				  }
 					  
 				  bytesin-=2;  // Making the data two bytes shorter!!
-				  System.arraycopy(bytes, i+3, bytes, i+1, bytesin - i);
+				  try
+				  {
+				     // Got a outofboundsexception during processing an updated lyric file
+				     // but could not reproduce it in debugger. This is the most likely place
+				     // for it if the offsets are wrong (length maybe, but bytesin has already been
+				     // reduced... could be a -ve length, I guess.
+				     // Hmm it is this.. but still not sure why
+				     System.arraycopy(bytes, i+3, bytes, i+1, bytesin - i);
+				  }
+				  catch(Exception ex)
+				  {
+				     log.log(Level.SEVERE, "Failed to remove UTF8 bytes: "
+				           + "bytes length=" + bytes.length
+				           + "bytesin=" + bytesin
+				           + "i=" + i
+				           + "(i+3)=" + (i+3) 
+				           + ", (i+1)=" + (i+1) 
+				           + ", (bytesin - i)=" + (bytesin-i),
+				           ex);
+				  }
 				  //System.out.println(new String(bytes, 0, bytesin));
 				  continue;
 			  }

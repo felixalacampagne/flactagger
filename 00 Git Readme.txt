@@ -45,7 +45,13 @@ sub-modules appear as references but they don't go anywhere in GitHub when they 
 Jeezus Wept this Git thing SUCKS!
 I got my change to JustFLAC accepted into the master project, so no more need for the GitHub fork that I created.
 This is an everyday occurrence, right? So replacing my "fork" with the master "fork" should be straight forward.
-Fork NO! I tried changing the URL of the submodule via eclipse - no change.
-In the end I had to delete the justFLAC source code, delete the JustFLAC entry(s) from .gitmodules and then
-delete the JustFLAC directory in .git/modules - it is completely absurd! Now to see if the changes get pushed
+Fork NO! I tried changing the URL of the submodule via eclipse - no change, then wasted an hour or so Googling and
+forking around. In the end I had to delete the local JustFLAC directory, delete the JustFLAC entry(s) 
+from .gitmodules and then when eclipse still wouldn't let me add the JustFLAC submodule becuase it already exists and
+is not empty (where does it exist, not in the real world, only in the fantasy world of Git!). Eventually I 
+deleted a JustFLAC directory in .git/modules and could add a JustFLAC submodule via eclipse, again.
+This is all completely absurd! How the hell did this system become the "new standard" - I guess the same way the
+110 film format almost killed 35mm film, VHS killed Betamax, mp3 killed CD - the "eat shirt, 10 gazillion flys can't
+be wrong" principle... and it's free.
+Now to see if the changes get pushed
 to GitHub si it refers to the master project instead of my version.

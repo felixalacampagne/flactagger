@@ -7,13 +7,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -276,6 +273,13 @@ public FileMetadata getFileMetadata(File f)
 			lyric = lyric.replace("&", "and");
 			lyric = lyric.replace(">", "");
 			lyric = lyric.replace("<", "");
+			
+			// Some lyrics have the quotes replaced with ?, extremely annoying for
+			// expressions like I'll, I'm, you're, etc.
+			// Restore the quote assuming ?s should only come at the end of
+			// sentences. The regex wont catch cases where the quote comes at end of the word, eg.
+			// Chris? regex is good enough, but will get most of them.
+			lyric = lyric.replaceAll("(?<=\\p{Alpha})\\?(?=\\p{Alpha})", "'");
 
 			// Dump remaining non-ascii stuff
 			lyric = lyric.replaceAll("[^\\x00-\\x7f]", "");
@@ -505,11 +509,6 @@ File lyfile = null;
 return 0;	
 }
 
-private FlacTags loadLyrics(String lyricsxml) throws JAXBException, FileNotFoundException
-{
-   return loadLyrics(new File(lyricsxml));
-}
-
 private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundException
 {
 	String ctxname = FlacTags.class.getPackage().getName();
@@ -568,6 +567,19 @@ public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundExc
             lxfile = rootdir;
          }
          lxfile = new File(lxfile, d.getName() + ".cue");
+         
+         // Easier to backup existing file than to check whether the
+         // filename are still correct and it's possible the existing
+         // file contains something important, eg. if it's a real cuesheet
+         // for a single file flac then dont want to loose the track indexes!
+         if(lxfile.exists())
+         {
+            // Backup the previous file.
+            String name = lxfile.getName();
+            name = name.replace(".cue", "_" + Utils.getTimestampFN(lxfile.lastModified()) + ".cue");
+            File rnfile = new File(lxfile.getParentFile(), name);
+            Files.move(lxfile.toPath(), rnfile.toPath(),  StandardCopyOption.REPLACE_EXISTING);
+         }         
          
 
          StringBuffer cue = new StringBuffer();
