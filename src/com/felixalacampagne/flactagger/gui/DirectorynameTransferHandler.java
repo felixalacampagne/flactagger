@@ -149,11 +149,23 @@ public class DirectorynameTransferHandler extends TransferHandler implements Dro
       	// Now that we have the original handler it can be used to handle the text as if it were a paste.
       	// Unfortunately the original handler inserts into the text which is not the behaviour I require for the drag feature, 
       	// and there isn't a way to change this behaviour, AFAIK.
-   		// I'll keep the it for non-textfields to make the class a bit more generic in case I ever use if for something else!!
+   		// I'll keep it for non-textfields to make the class a bit more generic in case I ever use if for something else!!
       	Component c = support.getComponent();
       	if(c instanceof JTextComponent)
       	{
-      		((JTextComponent)c).setText(draggedFile.getAbsolutePath());
+            JTextComponent txtfld = ((JTextComponent)c);
+            String droptxt = draggedFile.getAbsolutePath();
+      	   // Undoing a dropped directory name results in an empty field,
+      	   // undoing a second time restores the value that was dropped on.
+      	   // Don't know how to avoid the blank field... below are some attempts
+      	   // 1. Select the text and replace it with the dropped value
+      	   //txtfld.selectAll();
+      	   //txtfld.replaceSelection(droptxt);
+      	   // same undo behaviour...
+      	   
+      	   // So, keep it simple, until something that works pops up!!
+      	   txtfld.setText(droptxt);
+      	   
       		return true;
       	}
       	else if( c instanceof JComponent)
