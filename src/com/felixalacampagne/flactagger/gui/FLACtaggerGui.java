@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -14,13 +15,17 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Properties;
+import java.util.TooManyListenersException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -28,19 +33,24 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
+import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.undo.UndoManager;
 
 import com.felixalacampagne.flactagger.FLACtagger;
 
@@ -146,6 +156,7 @@ protected void setEnabled(boolean enable)
 	this.txtFlacTagsFile.setEnabled(enable);
 	this.txtRootDir.setEnabled(enable);
 	
+
 	// Should also disable the directory/file choosers.
 }
 
@@ -280,7 +291,10 @@ private void init()
   // Root dir - where to find the directories
   //   Label, textbox to display value, button for dir chooser
   txtRootDir = new JTextField();
-  txtRootDir.setTransferHandler(new DirectorynameTransferHandler(txtRootDir.getTransferHandler()));
+  
+  DirectorynameTransferHandler.addToComponent(txtRootDir);
+  
+  addCCPPopup(txtRootDir);
   
   JLabel lbl1 = new JLabel("Base directory:");
   lbl1.setLabelFor(txtRootDir); 
@@ -348,6 +362,8 @@ private void init()
   // XML file - for output/input dpending on mode
   //   Label, textbox to display value, button for file chooser
   txtFlacTagsFile = new JTextField();
+  addCCPPopup(txtFlacTagsFile);
+  
   JLabel lbl2 = new JLabel("Flac tags file:");
   lbl2.setLabelFor(txtFlacTagsFile);
   lbl2.setToolTipText("<html>Extract:<ul><li>filename: for all tags<li>directory: individual tag files<li>empty: tags in flac directories</ul>" +
@@ -651,8 +667,88 @@ boolean bFileMD5 = false;
 	}
  }
 
+// Thanks to https://stackoverflow.com/questions/30682416/java-right-click-copy-cut-paste-on-textfield
+// for the "inspiration" for this code!
+@SuppressWarnings("serial")
+public void addCCPPopup(JTextField txtField) 
+{
+    JPopupMenu popup = new JPopupMenu();
+    UndoManager undoManager = new UndoManager();
+    txtField.getDocument().addUndoableEditListener(undoManager);
 
+    Action undoAction = new AbstractAction("Undo") {
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            if (undoManager.canUndo()) 
+            {
+                undoManager.undo();
+            }
+            else {
+               System.out.println("No Undo Buffer.");
+            }
+        }
+    };
 
+    Action redoAction = new AbstractAction("Undo") {
+       @Override
+       public void actionPerformed(ActionEvent ae) {
+           if (undoManager.canRedo()) 
+           {
+               undoManager.redo();
+           }
+           else {
+              System.out.println("No Undo Buffer.");
+           }
+       }
+   };
+    
+    
+   Action copyAction = new AbstractAction("Copy") {
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            txtField.copy();
+        }
+    };
+
+    Action cutAction = new AbstractAction("Cut") {
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            txtField.cut();
+        }
+    };
+
+    Action pasteAction = new AbstractAction("Paste") {
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            txtField.paste();
+        }
+    };
+
+    Action selectAllAction = new AbstractAction("Select All") {
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            txtField.selectAll();
+        }
+    };
+
+    undoAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control Z"));
+    redoAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control Y"));
+    cutAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control X"));
+    copyAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control C"));
+    pasteAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control V"));
+    selectAllAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control A"));
+
+    popup.add (cutAction);
+    popup.add (copyAction);
+    popup.add (pasteAction);
+    popup.addSeparator();
+    popup.add (selectAllAction);
+    popup.add (undoAction);
+   
+    txtField.getInputMap().put(KeyStroke.getKeyStroke("control Z"), undoAction);
+    txtField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), redoAction);
+   txtField.setComponentPopupMenu(popup);
+}
 
 } // End of class
 
