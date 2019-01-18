@@ -42,14 +42,17 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.TransferHandler;
 import javax.swing.UIManager;
+import javax.swing.event.UndoableEditEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
 import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.PlainDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 
 import com.felixalacampagne.flactagger.FLACtagger;
@@ -674,6 +677,7 @@ public void addCCPPopup(JTextField txtField)
 {
     JPopupMenu popup = new JPopupMenu();
     UndoManager undoManager = new UndoManager();
+    txtField.setDocument(new CustomUndoPlainDocument());
     txtField.getDocument().addUndoableEditListener(undoManager);
 
     Action undoAction = new AbstractAction("Undo") {
@@ -684,20 +688,21 @@ public void addCCPPopup(JTextField txtField)
                 undoManager.undo();
             }
             else {
-               System.out.println("No Undo Buffer.");
+               System.out.println("Undo: canUndo is false");
             }
         }
     };
 
-    Action redoAction = new AbstractAction("Undo") {
+    Action redoAction = new AbstractAction("Redo") {
        @Override
        public void actionPerformed(ActionEvent ae) {
            if (undoManager.canRedo()) 
            {
                undoManager.redo();
            }
-           else {
-              System.out.println("No Undo Buffer.");
+           else 
+           {
+              System.out.println("Redo: canRedo is false.");
            }
        }
    };
@@ -747,8 +752,37 @@ public void addCCPPopup(JTextField txtField)
    
     txtField.getInputMap().put(KeyStroke.getKeyStroke("control Z"), undoAction);
     txtField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), redoAction);
-   txtField.setComponentPopupMenu(popup);
+    txtField.setComponentPopupMenu(popup);
+    
 }
+
+// Inspiration from answers to https://stackoverflow.com/questions/24433089/jtextarea-settext-undomanager
+class CustomUndoPlainDocument extends PlainDocument {
+   private static final long serialVersionUID = 1L; // Anything to avoid a warning :-)
+   private CompoundEdit compoundEdit;
+   @Override protected void fireUndoableEditUpdate(UndoableEditEvent e) {
+     if (compoundEdit == null) {
+       super.fireUndoableEditUpdate(e);
+     } else {
+       compoundEdit.addEdit(e.getEdit());
+     }
+   }
+   @Override public void replace(
+       int offset, int length,
+       String text, AttributeSet attrs) throws BadLocationException {
+     if (length == 0) {
+       System.out.println("insert");
+       super.replace(offset, length, text, attrs);
+     } else {
+       System.out.println("replace");
+       compoundEdit = new CompoundEdit();
+       super.fireUndoableEditUpdate(new UndoableEditEvent(this, compoundEdit));
+       super.replace(offset, length, text, attrs);
+       compoundEdit.end();
+       compoundEdit = null;
+     }
+   }
+ }
 
 } // End of class
 
