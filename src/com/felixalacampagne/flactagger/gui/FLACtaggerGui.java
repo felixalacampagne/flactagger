@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -15,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Properties;
-import java.util.TooManyListenersException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -25,7 +23,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -40,13 +37,11 @@ import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
-import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.PlainDocument;
@@ -567,7 +562,8 @@ boolean bFileMD5 = false;
 			//Logger log = Logger.getLogger(FLACtagger.class.getName());
 			//Logger log = Logger.getGlobal(); // This stops any logging to the handler, and turns jaudiotagger logging back on!!!!
 			Logger log = Logger.getLogger("");
-			
+			System.out.println("doInBackground: starting no-sleep");
+			KeepOnTruckin.startTruckin();			
 			int rc = 0;
 			log.addHandler(cl);
 			logdisplay.setText("");
@@ -599,6 +595,9 @@ boolean bFileMD5 = false;
 			finally
 			{
 				log.removeHandler(cl);
+				System.out.println("doInBackground: stopping no-sleep");
+				KeepOnTruckin.endOfTheRoad();
+				System.out.println("doInBackground: done");				
 			}
 
 	 }
@@ -620,9 +619,11 @@ boolean bFileMD5 = false;
 		   	 }
 		   	 else if(s.startsWith("WARNING:") || s.startsWith("ERROR:") || s.startsWith("SEVERE:"))
 		       {
-		      	 // This only prints the first debug line in red. So an excpetion stacktrace
-		      	 // is still printed with the default attributes. Maybe should make this a toggle
-		      	 // so the attribute stays in effect until a different severity arrives??
+		   		 // Switch to red. If the attributes are not explicitly set then this colour
+		   		 // will remain in effect - so the stracktrace lines are also displayed in red.
+		   		 // Unfortunately the red attribute sometimes stays in effect when it shouldn't
+		   		 // not really sure why this is since all the log messages start with one of the keywords
+		   		 
 		          attr = errorAttr;
 		       }
 		       else if(MSG_DONE.equals(s))
@@ -633,11 +634,11 @@ boolean bFileMD5 = false;
 		       {
 		      	 attr = errorAttr;
 		       }
+
 		       doc.insertString(doc.getLength(), s, attr);
 		    }
          catch (BadLocationException e)
          {
-            // TODO Auto-generated catch block
             e.printStackTrace();
          }
        }
@@ -771,10 +772,10 @@ class CustomUndoPlainDocument extends PlainDocument {
        int offset, int length,
        String text, AttributeSet attrs) throws BadLocationException {
      if (length == 0) {
-       System.out.println("insert");
+       //System.out.println("insert");
        super.replace(offset, length, text, attrs);
      } else {
-       System.out.println("replace");
+       //System.out.println("replace");
        compoundEdit = new CompoundEdit();
        super.fireUndoableEditUpdate(new UndoableEditEvent(this, compoundEdit));
        super.replace(offset, length, text, attrs);
@@ -785,4 +786,5 @@ class CustomUndoPlainDocument extends PlainDocument {
  }
 
 } // End of class
+
 
