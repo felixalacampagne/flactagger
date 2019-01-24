@@ -44,12 +44,17 @@ public class FLACtagger
 private static final String USAGE="Usage: FLACtagger <-u|-x> <-l lyrics.xml> [-r FLAC file rootdir]";
 private static final String FLAC_LYRICS_TAG="UNSYNCED LYRICS";
 private static final Logger log = Logger.getLogger(FLACtagger.class.getName());
+// Need to keep a reference to the JAT logger to avoid it being garbage collected before
+// any real JAT loggers are created, which I think is what causes the INFO level
+// messages to pollute the output sometimes.
+private static final Logger jatlog = Logger.getLogger("org.jaudiotagger");
 	public static void main(String[] args)
 	{
 	FLACtagger tagger = null;
 	CmdArgMgr cmds = new CmdArgMgr(args);
 	String lyricsxml = null;
-	Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
+	jatlog.setLevel(Level.WARNING);
+	
 	
 		if(args.length < 1)
 		{

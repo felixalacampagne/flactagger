@@ -518,9 +518,14 @@ File pfile = new File(System.getProperty("user.home"), PROP_FILE);
 	}
 }
 
+// Need to keep the reference to the jat logger on which the level is set
+// to avoid it being garbage collected before jaudiotagger creates its own
+// loggers. I think this is why the output sometimes includes jaudiotagger 
+// log messages and sometimes doesn't.
+static Logger mjaudiotaggerLogger = Logger.getLogger("org.jaudiotagger");
 public static void main(String[] args)
 {
-	Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
+   mjaudiotaggerLogger.setLevel(Level.WARNING);
 	new FLACtaggerGui();
 }
 
@@ -557,15 +562,16 @@ boolean bFileMD5 = false;
 	 public Integer doInBackground() 
 	 {
 			FLACtagger taggr = new FLACtagger(rootDir);
+
+			
 			CaptureLog cl = new CaptureLog(this);
-			//Logger.getLogger("org.jaudiotagger").setLevel(Level.WARNING);
-			//Logger log = Logger.getLogger(FLACtagger.class.getName());
-			//Logger log = Logger.getGlobal(); // This stops any logging to the handler, and turns jaudiotagger logging back on!!!!
 			Logger log = Logger.getLogger("");
+			log.addHandler(cl);
+			
 			System.out.println("doInBackground: starting no-sleep");
 			KeepOnTruckin.startTruckin();			
 			int rc = 0;
-			log.addHandler(cl);
+ 
 			logdisplay.setText("");
 			
 			try

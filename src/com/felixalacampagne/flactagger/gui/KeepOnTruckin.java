@@ -1,12 +1,15 @@
 package com.felixalacampagne.flactagger.gui;
 
-import java.awt.AWTException;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Robot;
 
+import com.sun.jna.Native;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinBase;
+
 /**
- * Attempts to prevent the system from entering sleep mode while a length operation is being performed.
+ * Attempts to prevent the system from entering sleep mode while a lengthy operation is being performed.
  * On Windows the system will enter sleep/hibernate mode even when the CPU is at 100%. There is a Win32 API
  * call which will stop sleep (SetThreadExecutionState) but the JNI call would add an external dependency 
  * that I want to avoid, same for the JNA library in github.
@@ -28,11 +31,11 @@ import java.awt.Robot;
 public class KeepOnTruckin extends Thread
 {
 private static KeepOnTruckin mInstance = null;
-private int mInterval = 120; // seconds
+private int mInterval = 10; //120; // seconds
 private boolean mRun = false;
 private Point mLastPos = null;
 private int mDir = -2;
-
+private Kernel32 K32=null;
 
 	public static synchronized void startTruckin()
 	{
@@ -61,7 +64,6 @@ private int mDir = -2;
 		}
 		catch (InterruptedException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		finally
@@ -74,6 +76,18 @@ private int mDir = -2;
 	private KeepOnTruckin()
 	{
 		super("KeepOnTruckin");
+		// TODO: dynamically load the JNA stuff so it isn't required.
+      try
+      {
+         System.out.println("Loading kernel32");
+         K32 = Native.load("kernel32", Kernel32.class);
+         System.out.println("Loaded kernel32");
+      }
+      catch(Error er)
+      {
+          er.printStackTrace();
+      }
+		
 	}
 	
 	public void run()
@@ -85,7 +99,7 @@ private int mDir = -2;
 		{
 			// Jiggle the mouse a bit - the only thing that can be done with no external dependencies -
 			// to keep the system from going to sleep.
-			simulateUserActivity();
+		   keepSystemAwake();
 			try
 			{
 				Thread.sleep(mInterval * 1000);
@@ -135,6 +149,20 @@ private int mDir = -2;
 		
 	}
 
+	private void keepSystemAwake()
+   {
+	   if(K32 != null)
+	   {
+	      System.out.println("Keeping system busy using Win32 API");
+	      K32.SetThreadExecutionState(WinBase.ES_SYSTEM_REQUIRED);
+	   }
+	   else
+	   {
+	      simulateUserActivity();
+	   }
+   }
+
+	
 	public synchronized boolean isRun()
 	{
 		return mRun;
@@ -157,7 +185,6 @@ private int mDir = -2;
 		}
 		catch (InterruptedException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("KOTtest: terminating...");

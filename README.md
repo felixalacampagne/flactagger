@@ -19,6 +19,10 @@ media haven't become corrupt.
 FLACtagger relies on;
 - the "jaudiotagger" library which can be found here: https://bitbucket.org/ijabz/jaudiotagger.git
 - the "JustFLAC" library which can be found here: https://github.com/drogatkin/JustFLAC.git
+- the "jNA" library found here: https://github.com/java-native-access/jna
+  To keep FLACtagger a standalone (aka executable) jar the jna.jar and jna-platform.jar archives 
+  should be unzipped to the lib/bin directory. The content of lib/bin is then added to the FLACtagger 
+  archive. This does not appear to affect the dynamic creation/loading of the JNI DLL used by JNA.
 
 When I set up the FLACtagger GitHub project I was asked about the license to be applied. I can't find this
 information anywhere, and can't find licenses for the dependencies either.
