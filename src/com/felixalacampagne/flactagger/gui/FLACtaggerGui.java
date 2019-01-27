@@ -551,6 +551,13 @@ boolean bFileMD5 = false;
 		 
 		// defaultAttr doesn't need to be Mutable (at the moment) but doing it like this for consistency.
 		 defaultAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes()); 
+		 
+		 // Must force the default colour - if the display is scrolled to
+		 // display an error then the attribute returned here has a red colour, possibly if the display
+		 // is scrolled to the right to display the full line and the resulting display only has
+		 // red text in it.
+		 StyleConstants.setForeground(defaultAttr, Color.BLACK);
+		 
 		 errorAttr = new SimpleAttributeSet(defaultAttr);
 		 StyleConstants.setForeground(errorAttr, Color.RED);
 		 
