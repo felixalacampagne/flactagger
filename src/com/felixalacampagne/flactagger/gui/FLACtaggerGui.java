@@ -461,11 +461,10 @@ private void init()
    JScrollPane	scp = new JScrollPane(xpnl,  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
    scp.setMaximumSize(new Dimension(400,300));
    scp.setPreferredSize(scp.getMaximumSize());
+   scp.getVerticalScrollBar().setUnitIncrement(16); // 16 works for my screen!!
    pnl.setLayout(new BorderLayout());
    pnl.add(scp, BorderLayout.CENTER);
    mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-   //CaptureLogTA cl = new CaptureLogTA(logdisplay);
-   //Logger.getLogger(FLACtagger.class.getName()).addHandler(cl);	
   
    mainframe.pack();
    mainframe.setVisible(true);
@@ -571,7 +570,7 @@ boolean bFileMD5 = false;
 			FLACtagger taggr = new FLACtagger(rootDir);
 
 			
-			CaptureLog cl = new CaptureLog(this);
+			CaptureLogHandler cl = new CaptureLogHandler(this);
 			Logger log = Logger.getLogger("");
 			log.addHandler(cl);
 			
