@@ -24,19 +24,11 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
-import org.jaudiotagger.tag.FieldDataInvalidException;
+
 import org.jaudiotagger.tag.FieldKey;
-import org.jaudiotagger.tag.KeyNotFoundException;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagField;
-import org.jaudiotagger.tag.datatype.DataTypes;
 import org.jaudiotagger.tag.flac.FlacTag;
-import org.jaudiotagger.tag.id3.AbstractID3v2Frame;
-import org.jaudiotagger.tag.id3.AbstractID3v2Tag;
-import org.jaudiotagger.tag.id3.ID3v23FieldKey;
-import org.jaudiotagger.tag.id3.ID3v23Frames;
-import org.jaudiotagger.tag.id3.ID3v23Tag;
-import org.jaudiotagger.tag.id3.framebody.FrameBodyUSLT;
 import org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField;
 
 import com.felixalacampagne.flactagger.generated.flactags.Directory;
@@ -485,46 +477,33 @@ File lyfile = null;
            try
            {
               AudioFile af = AudioFileIO.read(f);
-              boolean updated = false;
+			
               Tag tag = af.getTag();
               // Looks like it might be possible to support import/update of MP3 lyric tags from here.
               // Currently I have a whole bunch of mp3 lyric XML files generated from mp3tag using the
-              // flactags schema... ID3v23
-              if(tag != null)
+              // flactags schema...
+              if((tag != null) && (tag instanceof FlacTag ))
               {
-            	  if(tag instanceof FlacTag )
-            	  {
-            		  if(tag.hasField(FLAC_LYRICS_TAG))
-            		  {
-            			  String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
-            			  if(trimlyric.equals(currlyric))
-            			  {
-            				  log.info("Lyric is already present, no update required: "+ fdisp);
-            				  continue;
-            			  }
-            			  log.info("Removing existing lyric from "+ fdisp);
-            			  tag.deleteField(FLAC_LYRICS_TAG);
-            		  }
-            		  // TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-            		  TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
-            		  tag.addField(lyrictf);
-            		  updated = true;
-
-            	  }
-            	  else if(tag instanceof AbstractID3v2Tag)
-            	  {
-            		  updated = updateLyricTag((AbstractID3v2Tag)tag, trimlyric, fdisp);
-            	  }
-            	  
-            	  if(updated)
-            	  {
-            		  log.info("updating tag: " + fdisp);
-            		  af.commit();
-            	  }
+                 if(tag.hasField(FLAC_LYRICS_TAG))
+                 {
+                    String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
+                    if(trimlyric.equals(currlyric))
+                    {
+                       log.info("Lyric is already present, no update required: "+ fdisp);
+                       continue;
+                    }
+                    log.info("Removing existing lyric from "+ fdisp);
+                    tag.deleteField(FLAC_LYRICS_TAG);
+                 }
+                 // TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
+                 TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
+                 tag.addField(lyrictf);
+                 log.info("updating: " + fdisp);
+                 af.commit();
               }
               else
               {
-                 log.severe("WARN: No metadata tag present in file, unable to update: " + fdisp);
+                 log.severe("WARN: No or none-FLAC tag, unable to update: " + fdisp);
               }
            }
            catch(Exception ex)
@@ -536,41 +515,6 @@ File lyfile = null;
   }
 	
 return 0;	
-}
-
-
-private boolean updateLyricTag(AbstractID3v2Tag tag, String trimlyric, String fname)
-{
-boolean updated = false;
-
-	if(tag.hasField(FieldKey.LYRICS))
-	{
-		  String currlyric = tag.getFirst(FieldKey.LYRICS);
-		  if(trimlyric.equals(currlyric))
-		  {
-			  log.info("Lyric is already present, no update required: "+ fname);
-			  return updated;
-		  }
-		  log.info("Removing existing lyric from "+ fname);
-		  tag.deleteField(FieldKey.LYRICS);
-	}
-	TagField lyrictf;
-	try {
-		lyrictf = tag.createField(FieldKey.LYRICS, trimlyric);
-
-		// This is ugly but apparently a language is required by the tag library and the default value
-		// is invalid. Not sure why the language is required. When MP3TAG displays the lyrics it
-		// includes the language which is weird. Remains to be seen what is displayed in iTunes.
-		((FrameBodyUSLT) ((AbstractID3v2Frame) lyrictf).getBody()).setLanguage("eng");
-		
-		tag.addField(lyrictf);
-		updated = true;
-	} catch (Exception e) {
-		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
-	} 
-	
-
-	return updated;
 }
 
 private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundException
