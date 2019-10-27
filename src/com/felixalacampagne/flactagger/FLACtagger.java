@@ -371,7 +371,7 @@ File lyfile = null;
             if(pathname.isDirectory())
                return false;
             String name = pathname.getName();
-            // Make big assumption that all XML files in the directory as lyrics files!!
+            // Make big assumption that all XML files in the directory are lyrics files!!
             boolean rc = name.matches("(?i)^.*\\.xml$"); 
             return rc;
          }
@@ -479,6 +479,9 @@ File lyfile = null;
               AudioFile af = AudioFileIO.read(f);
 			
               Tag tag = af.getTag();
+              // Looks like it might be possible to support import/update of MP3 lyric tags from here.
+              // Currently I have a whole bunch of mp3 lyric XML files generated from mp3tag using the
+              // flactags schema...
               if((tag != null) && (tag instanceof FlacTag ))
               {
                  if(tag.hasField(FLAC_LYRICS_TAG))
