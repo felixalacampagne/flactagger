@@ -558,19 +558,28 @@ boolean updated = false;
 	try {
 		lyrictf = tag.createField(FieldKey.LYRICS, trimlyric);
 
-		// This is ugly but apparently a language is required by the tag library and the default value
-		// is invalid. Not sure why the language is required. When MP3TAG displays the lyrics it
-		// includes the language which is weird. Remains to be seen what is displayed in iTunes.
-		((FrameBodyUSLT) ((AbstractID3v2Frame) lyrictf).getBody()).setLanguage("eng");
-		
+		if(lyrictf instanceof AbstractID3v2Frame)
+		{
+			setLyricLanguage((AbstractID3v2Frame) lyrictf);
+		}
 		tag.addField(lyrictf);
 		updated = true;
-	} catch (Exception e) {
+	} 
+	catch (Exception e) 
+	{
 		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
 	} 
 	
 
 	return updated;
+}
+
+// This is ugly but apparently a language is required by the tag library and the default value
+// is invalid. Not sure why the language is required. When MP3TAG displays the lyrics it
+// includes the language which is weird. Remains to be seen what is displayed in iTunes.
+private void setLyricLanguage(AbstractID3v2Frame lyrf)
+{
+	((FrameBodyUSLT) lyrf.getBody()).setLanguage("eng");
 }
 
 private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundException
