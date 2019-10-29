@@ -255,6 +255,7 @@ List<FileMetadata> files = null;
 }
 	
 // TODO: Artist and album should be per file instead of per directory to accommodate compilations
+// This should work for FLAC and MP3 if the abstract Fieldkey tag names are mapped correctly
 public FileMetadata getFileMetadata(File f)
 {
 	FileMetadata ftx = null;
@@ -271,7 +272,16 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setTracknumber(Utils.str2Int(tag.getFirst(FieldKey.TRACK)));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
-		String lyric = tag.getFirst(FLAC_LYRICS_TAG);
+		
+		String lyric = null;
+		if(tag instanceof FlacTag)
+		{
+			lyric = tag.getFirst(FLAC_LYRICS_TAG);
+		}
+		else
+		{
+			lyric = tag.getFirst(FieldKey.LYRICS); //
+		}
 		if(lyric != null)
 		{
 			// Leaving the CRLF in results in lines terminated with the text "&#xD;" and a normal linefeed
@@ -337,7 +347,7 @@ List<File> files = new ArrayList<File>();
 				if(pathname.isDirectory())
 					return false;
 				String name = pathname.getName();
-				boolean rc = name.matches("(?i)^.*\\.flac$"); 
+				boolean rc = name.matches("(?i)^.*\\.(flac|mp3)$"); 
 				return rc;
 			}
 		})));
@@ -824,6 +834,10 @@ private String getFileDispName(File f)
 
 public String getAudioDigest(File flacfile, FileMetadata ftx)
 {
+	// Only works for FLAC files
+	// TODO iprove the test for FLACs
+	if(!flacfile.getName().matches("^.*\\.flac$"))
+		return null;
 	
 	FLACdigester fd = new FLACdigester();
 	String dig = null;
