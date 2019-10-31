@@ -505,27 +505,15 @@ File lyfile = null;
               {
             	  if(tag instanceof FlacTag )
             	  {
-            		  if(tag.hasField(FLAC_LYRICS_TAG))
-            		  {
-            			  String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
-            			  if(trimlyric.equals(currlyric))
-            			  {
-            				  log.info("Lyric is already present, no update required: "+ fdisp);
-            				  continue;
-            			  }
-            			  log.info("Removing existing lyric from "+ fdisp);
-            			  tag.deleteField(FLAC_LYRICS_TAG);
-            		  }
-            		  // TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-            		  TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
-            		  tag.addField(lyrictf);
-            		  updated = true;
-
+            		  updated = updateLyricTag((FlacTag) tag, trimlyric, fdisp);
             	  }
             	  else if(tag instanceof AbstractID3v2Tag)
             	  {
             		  updated = updateLyricTag((AbstractID3v2Tag)tag, trimlyric, fdisp);
             	  }
+
+            	  // Will this work for FLACs? In theory it should, but the generic stuff didn't work for the LYRICS tag
+         		  updated = updated | updateFieldTag(tag, FieldKey.TITLE, ft.getTitle(), fdisp); 
             	  
             	  if(updated)
             	  {
@@ -549,15 +537,84 @@ File lyfile = null;
 return 0;	
 }
 
+private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fname)
+{
+	boolean updated = false;
+	if((newvalue==null) || (newvalue.isEmpty()))
+		return updated;
+	
+	if(tag.hasField(fld))
+	{
+		  String oldvalue = tag.getFirst(fld);
+		  if(newvalue.equals(oldvalue))
+		  {
+			  log.info("Value is already present for field '" + fld.name() + "', no update required: "+ fname);
+			  return updated;
+		  }
+		  log.info("Removing existing value for field '" + fld.name() + "':"   + fname);
+		  tag.deleteField(fld);
+	}
+	TagField tagf;
+	try {
+		tagf = tag.createField(fld, newvalue);
+		tag.addField(tagf);
+		updated = true;
+	} 
+	catch (Exception e) 
+	{
+		log.log(Level.SEVERE, "Failed to add value '" + fld.name() + "' to: "+ fname, e);
+	} 
+		
+	
+	
+	return updated;
+}
 
-private boolean updateLyricTag(AbstractID3v2Tag tag, String trimlyric, String fname)
+private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
+{
+	// Can't use the generic FieldKey.LYRICS because it is mapped to FLAC tag 'LYRICS' instead of 'UNSYNCED LYRICS'
+	// and I don't see a way to override this at the moment.	
+	
+	boolean updated = false;
+	if((newlyric==null) || (newlyric.isEmpty()))
+		return updated;
+	if(tag.hasField(FLAC_LYRICS_TAG))
+	{
+		  String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
+		  if(newlyric.equals(currlyric))
+		  {
+			  log.info("Lyric is already present, no update required: "+ fname);
+			  return updated;
+		  }
+		  log.info("Removing existing lyric from "+ fname);
+		  tag.deleteField(FLAC_LYRICS_TAG);
+	}
+	
+	// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
+	//TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, newlyric);
+	//TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
+	try {
+
+		//TagField lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
+		TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
+		tag.addField(lyrictf);
+		updated = true;
+	} catch (FieldDataInvalidException e) {
+	
+		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
+	}
+	return updated;
+}
+
+private boolean updateLyricTag(AbstractID3v2Tag tag, String newlyric, String fname)
 {
 boolean updated = false;
-
+	if((newlyric==null) || (newlyric.isEmpty()))
+		return updated;
 	if(tag.hasField(FieldKey.LYRICS))
 	{
 		  String currlyric = tag.getFirst(FieldKey.LYRICS);
-		  if(trimlyric.equals(currlyric))
+		  if(newlyric.equals(currlyric))
 		  {
 			  log.info("Lyric is already present, no update required: "+ fname);
 			  return updated;
@@ -567,7 +624,7 @@ boolean updated = false;
 	}
 	TagField lyrictf;
 	try {
-		lyrictf = tag.createField(FieldKey.LYRICS, trimlyric);
+		lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
 
 		if(lyrictf instanceof AbstractID3v2Frame)
 		{
