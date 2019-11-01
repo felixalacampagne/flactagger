@@ -29,3 +29,29 @@ information anywhere, and can't find licenses for the dependencies either.
 
 BTW: This is a text file, not a message digest, so why does it need to have the ".md" extension?
 Curse: GitHub lets me edit this file - and then it does't let me save the changes (aaaggghhh!!!!)
+
+Git mess again:
+local repo on dev machine
+pushes to
+remote repo on NAS
+pushes to
+gitbub
+
+Changes are made on dev machine and saved in the local repo.
+Local repo is backed up to the intermediate NAS repo when network is available.
+When something is working it is published from NAS repo to Github.
+
+This should be trivial but every single time I try to do it git forks it up!
+The NAS repo was originally a bare repo, but none of the git tools I've tried work
+with a bare repo making the damn thing completely useless as a backup because there
+is no way to usefully visulaise what is in it. So I converted to a normal repo. Now
+each time I push something from the local repo to the NAS repo it claims that working
+NAS repo working copy has changes. When I tried using Github Desktop it constantly 
+overwrites the changes in the NAS repo with the old files from the NAS repo working copy,
+instead of push the NAS repo to GitHub (this is probably as the labels given to things in
+GHD are completely incomprehensible). Anyway I kind of get the impression that before doing
+anything with the NAS repo I need to force the working copy to contain the updates made in
+the repo as this does not happen automatically (probably incredibly naive of me to expect 
+git to do anything like this automatically, I suppose I'm too used to the luxury of
+using Clearcase where changes to unmodified files are visible immediately).
+I 
