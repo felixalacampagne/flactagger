@@ -1,5 +1,5 @@
 package com.felixalacampagne.flactagger;
-// This has mp3 tagging with extract: git desktop keeps erasing this version
+// 01-Nov-2019 19:04 Gratuitous comment because git keeps erasing this version
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
