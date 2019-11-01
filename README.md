@@ -27,44 +27,4 @@ FLACtagger relies on;
 When I set up the FLACtagger GitHub project I was asked about the license to be applied. I can't find this
 information anywhere, and can't find licenses for the dependencies either.
 
-BTW: This is a text file, not a message digest, so why does it need to have the ".md" extension?
-Curse: GitHub lets me edit this file - and then it does't let me save the changes (aaaggghhh!!!!)
 
-Git mess again:
-local repo on dev machine
-pushes to
-remote repo on NAS
-pushes to
-gitbub
-
-Changes are made on dev machine and saved in the local repo.
-Local repo is backed up to the intermediate NAS repo when network is available.
-When something is working it is published from NAS repo to Github.
-
-This should be trivial but every single time I try to do it git forks it up!
-The NAS repo was originally a bare repo, but none of the git tools I've tried work
-with a bare repo making the damn thing completely useless as a backup because there
-is no way to usefully visulaise what is in it. So I converted to a normal repo. Now
-each time I push something from the local repo to the NAS repo it claims that working
-NAS repo working copy has changes. When I tried using Github Desktop it constantly 
-overwrites the changes in the NAS repo with the old files from the NAS repo working copy,
-instead of push the NAS repo to GitHub (this is probably as the labels given to things in
-GHD are completely incomprehensible). Anyway I kind of get the impression that before doing
-anything with the NAS repo I need to force the working copy to contain the updates made in
-the repo as this does not happen automatically (probably incredibly naive of me to expect 
-git to do anything like this automatically, I suppose I'm too used to the luxury of
-using Clearcase where changes to unmodified files are visible immediately).
-
-Now the local 'git push' doesn't do anything!!! Surely it should push the currently
-select branch? 
-Have to use 'git push --all' (WTF can't it just do the current branch?)
-Then I get the error about updating the current branch in a non-bare repository
-is denied, which is weird because that should have been fixed when I issued the
-'git config --local receive.denyCurrentBranch updateInstead' incantation when the
-bare repo was converted to non-bare. Anyway, this is git, why enter a bunch of random letters
-once when you can enter them over and over and over again just to get simple trivial everyday
-tasks accomplished... Entering the "git config --local receive.denyCurrentBranch updateInstead"
-incantation again gets 'git push --all' to work, and now the working copy IS updating.
-Don't tell me, the updateInstead incantation has to be issued for every branch... see entering
-things over and over and over again....
- 
