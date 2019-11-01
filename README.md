@@ -54,4 +54,6 @@ anything with the NAS repo I need to force the working copy to contain the updat
 the repo as this does not happen automatically (probably incredibly naive of me to expect 
 git to do anything like this automatically, I suppose I'm too used to the luxury of
 using Clearcase where changes to unmodified files are visible immediately).
+
+Now the local 'git push' doesn't do anything!!!
 I 
