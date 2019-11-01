@@ -64,5 +64,7 @@ is denied, which is weird because that should have been fixed when I issued the
 bare repo was converted to non-bare. Anyway, this is git, why enter a bunch of random letters
 once when you can enter them over and over and over again just to get simple trivial everyday
 tasks accomplished... Entering the "git config --local receive.denyCurrentBranch updateInstead"
-incantation again gets 'git push --all' to work
+incantation again gets 'git push --all' to work, and now the working copy IS updating.
+Don't tell me, the updateInstead incantation has to be issued for every branch... see entering
+things over and over and over again....
  
