@@ -57,4 +57,12 @@ using Clearcase where changes to unmodified files are visible immediately).
 
 Now the local 'git push' doesn't do anything!!! Surely it should push the currently
 select branch? 
+Have to use 'git push --all' (WTF can't it just do the current branch?)
+Then I get the error about updating the current branch in a non-bare repository
+is denied, which is weird because that should have been fixed when I issued the
+'git config --local receive.denyCurrentBranch updateInstead' incantation when the
+bare repo was converted to non-bare. Anyway, this is git, why enter a bunch of random letters
+once when you can enter them over and over and over again just to get simple trivial everyday
+tasks accomplished... Entering the "git config --local receive.denyCurrentBranch updateInstead"
+incantation again gets 'git push --all' to work
  
