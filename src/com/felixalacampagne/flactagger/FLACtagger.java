@@ -194,7 +194,7 @@ boolean flacdirlyrics = false;
 	if(isMd5fileEnabled())
 	{
 		
-		saveFlacaudioMD5(rootDir, alllyrics);
+		saveFolderaudioMD5(rootDir, alllyrics);
 		saveCuesheet(rootDir, alllyrics); // TODO: give this it's own option
 	}	
 	
@@ -254,7 +254,6 @@ List<FileMetadata> files = null;
 	return flaccnt;
 }
 	
-// TODO: Artist and album should be per file instead of per directory to accommodate compilations
 // This should work for FLAC and MP3 if the abstract Fieldkey tag names are mapped correctly
 public FileMetadata getFileMetadata(File f)
 {
@@ -272,6 +271,8 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setTracknumber(Utils.str2Int(tag.getFirst(FieldKey.TRACK)));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
+		ftx.setTitle(tag.getFirst(FieldKey.TITLE));
+		
 		
 		String lyric = null;
 		if(tag instanceof FlacTag)
@@ -514,11 +515,22 @@ File lyfile = null;
 
             	  // Will this work for FLACs? In theory it should, but the generic stuff didn't work for the LYRICS tag
          		  updated = updated | updateFieldTag(tag, FieldKey.TITLE, ft.getTitle(), fdisp); 
-            	  
+         		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM, ft.getAlbum(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.ARTIST, ft.getArtist(), fdisp);
+         		  
+         		  // I prefer to keep ALBUM_ARTIST and COMPOSER equal to ARTIST because some Apple apps
+         		  // choose the wrong field for display. 
+         		  // TODO add these to the XML output...
+         		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getArtist(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getArtist(), fdisp);
             	  if(updated)
             	  {
-            		  log.info("updating tag: " + fdisp);
+            		  log.info("Updating tag: " + fdisp);
             		  af.commit();
+            	  }
+            	  else
+            	  {
+            		  log.info("No change to tag required"); 
             	  }
               }
               else
@@ -542,22 +554,23 @@ private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fn
 	boolean updated = false;
 	if((newvalue==null) || (newvalue.isEmpty()))
 		return updated;
-	
+	String oldvalue = "<blank>";
 	if(tag.hasField(fld))
 	{
-		  String oldvalue = tag.getFirst(fld);
-		  if(newvalue.equals(oldvalue))
-		  {
-			  log.info("Value is already present for field '" + fld.name() + "', no update required: "+ fname);
-			  return updated;
-		  }
-		  log.info("Removing existing value for field '" + fld.name() + "':"   + fname);
-		  tag.deleteField(fld);
+		oldvalue = tag.getFirst(fld);
+		if(newvalue.equals(oldvalue))
+		{
+			log.fine("Value is unchanged for field '" + fld.name() + "', no update required: "+ fname);
+			return updated;
+		}
+		log.fine("Removing existing value for field '" + fld.name() + "':"   + fname);
+		tag.deleteField(fld);
 	}
 	TagField tagf;
 	try {
 		tagf = tag.createField(fld, newvalue);
 		tag.addField(tagf);
+		log.info("Updated '"  + fld.name() + "' to '" + newvalue + "' from '" + oldvalue + "'");
 		updated = true;
 	} 
 	catch (Exception e) 
@@ -583,10 +596,10 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 		  String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
 		  if(newlyric.equals(currlyric))
 		  {
-			  log.info("Lyric is already present, no update required: "+ fname);
+			  log.fine("Lyric is unchanged, no update required: "+ fname);
 			  return updated;
 		  }
-		  log.info("Removing existing lyric from "+ fname);
+		  log.fine("Removing existing lyric from "+ fname);
 		  tag.deleteField(FLAC_LYRICS_TAG);
 	}
 	
@@ -598,6 +611,8 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 		//TagField lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
 		TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
 		tag.addField(lyrictf);
+		log.info("Updated lyric in "+ fname);
+
 		updated = true;
 	} catch (FieldDataInvalidException e) {
 	
@@ -616,10 +631,10 @@ boolean updated = false;
 		  String currlyric = tag.getFirst(FieldKey.LYRICS);
 		  if(newlyric.equals(currlyric))
 		  {
-			  log.info("Lyric is already present, no update required: "+ fname);
+			  log.fine("Lyric is unchanged, no update required: "+ fname);
 			  return updated;
 		  }
-		  log.info("Removing existing lyric from "+ fname);
+		  log.fine("Removing existing lyric from "+ fname);
 		  tag.deleteField(FieldKey.LYRICS);
 	}
 	TagField lyrictf;
@@ -631,6 +646,7 @@ boolean updated = false;
 			setLyricLanguage((AbstractID3v2Frame) lyrictf);
 		}
 		tag.addField(lyrictf);
+		log.info("Updated lyric in "+ fname);
 		updated = true;
 	} 
 	catch (Exception e) 
@@ -780,7 +796,7 @@ public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundExc
 public static final String FA_NAME="folderaudio";
 public static final String FA_EXTN=".md5";
 public static final String FA_FILENAME= FA_NAME + FA_EXTN;
-public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoundException
+public void saveFolderaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoundException
 {
    // flacaudio.md5 writing belongs somewhere else!!
    OutputStreamWriter osw = null;
@@ -790,6 +806,18 @@ public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoun
       for(Directory d : tags.getDirectory())
       {
 
+      	// TODO Save calculated MD5 if streaminfo MD5 is not present... could then
+      	// be used for MP3 files
+      	// TODO Better check to determine whether to save folderaudio.md5 or not, ie. only
+      	// save if all files have an MD5
+
+      	// Quick hack to stop MP3 foldeaudio.md5 files from being overwritten accidentally.
+      	// Only FLAC files have the streaminfo MD5 therefore 
+      	// saving folderaudio.md5 is only supported for flac files. 
+      	// Assume all files in directory are the same type.
+      	if(!d.getFiles().getFilemetadata().get(0).getName().matches("^.*\\.flac$"))
+      		continue;
+      	
       	if(rootdir == null)
       	{
       		rootdir = new File(lyricsxml);
