@@ -55,5 +55,6 @@ the repo as this does not happen automatically (probably incredibly naive of me 
 git to do anything like this automatically, I suppose I'm too used to the luxury of
 using Clearcase where changes to unmodified files are visible immediately).
 
-Now the local 'git push' doesn't do anything!!!
-I 
+Now the local 'git push' doesn't do anything!!! Surely it should push the currently
+select branch? 
+ 
