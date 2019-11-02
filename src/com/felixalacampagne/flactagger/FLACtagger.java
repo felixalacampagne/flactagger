@@ -1,5 +1,5 @@
 package com.felixalacampagne.flactagger;
-// 01-Nov-2019 19:04 Gratuitous comment because git keeps erasing this version
+// 01-Nov-2019 19:04 Gratuitous comment because git keeps erasing my latest version
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -799,18 +799,22 @@ public void saveFolderaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFo
       for(Directory d : tags.getDirectory())
       {
 
-      	// TODO Save calculated MD5 if streaminfo MD5 is not present... could then
-      	// be used for MP3 files
-      	// TODO Better check to determine whether to save folderaudio.md5 or not, ie. only
-      	// save if all files have an MD5
-
-      	// Quick hack to stop MP3 foldeaudio.md5 files from being overwritten accidentally.
-      	// Only FLAC files have the streaminfo MD5 therefore 
-      	// saving folderaudio.md5 is only supported for flac files. 
-      	// Assume all files in directory are the same type.
-      	if(!d.getFiles().getFilemetadata().get(0).getName().matches("^.*\\.flac$"))
-      		continue;
-      	
+      	// Only write folderaudio if all entries have an MD5, either from streaminfo or calculated.
+      	boolean skipfamd5 = false;
+         for(FileMetadata fmd : d.getFiles().getFilemetadata())
+         {
+         	String md5trk = fmd.getStrmpcmmd5();
+         	if(md5trk == null)
+         		md5trk = fmd.getCalcpcmmd5();
+         	if(md5trk == null)
+         	{
+         		skipfamd5 = true;
+         		break;
+         	}
+         }
+         if(skipfamd5)
+         	continue;
+         
       	if(rootdir == null)
       	{
       		rootdir = new File(lyricsxml);
@@ -843,7 +847,11 @@ public void saveFolderaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFo
       	StringBuffer md5s = new StringBuffer();
          for(FileMetadata fmd : d.getFiles().getFilemetadata())
          {
-            md5s.append(fmd.getStrmpcmmd5()).append(" *");
+         	// Use a calculated MD5 if there is no streaminfo value (always the case for MP3)
+         	String md5trk = fmd.getStrmpcmmd5();
+         	if(md5trk == null)
+         		md5trk = fmd.getCalcpcmmd5();
+            md5s.append(md5trk).append(" *");
             md5s.append(fmd.getName());
             md5s.append("\n");
          }
@@ -913,12 +921,11 @@ private String getFileDispName(File f)
 
 public String getAudioDigest(File flacfile, FileMetadata ftx)
 {
-	// Only works for FLAC files
-	// TODO iprove the test for FLACs
-	if(!flacfile.getName().matches("^.*\\.flac$"))
-		return null;
-	
-	FLACdigester fd = new FLACdigester();
+	AudioDigester fd = AudioDigesterFactory.getAudioDigester(flacfile);
+
+	if(fd == null)
+		return null; 
+	//AudioDigester fd = new FLACdigester();
 	String dig = null;
 	try
 	{
