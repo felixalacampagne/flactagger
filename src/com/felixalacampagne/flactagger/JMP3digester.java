@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
@@ -57,7 +58,7 @@ public class JMP3digester extends AbstractAudioDigester {
 	{
 		AudioInputStream mp3stream = null;
 		AudioInputStream pcmstream = null;
-		AudioFileFormat.Type[] types = AudioSystem.getAudioFileTypes();
+		
 		
 		try
 		{
@@ -74,6 +75,15 @@ public class JMP3digester extends AbstractAudioDigester {
 			                                            false);			
 			
 			pcmstream = AudioSystem.getAudioInputStream(decodedFormat, mp3stream); //AudioSystem.getAudioInputStream(AudioFormat.Encoding.PCM_SIGNED, mp3stream);
+
+//	      Maybe details in the properties can give an idea why the difference in size between FFMPEG and JMP3,
+//       but I don't see how at the moment.
+//			AudioFileFormat baseFileFormat = AudioSystem.getAudioFileFormat(audioFile);
+//			Map<String, Object> audiopros = baseFileFormat.properties();
+//			for(String s : audiopros.keySet())
+//			{ 
+//				System.out.println("Property " + s + ": " + audiopros.get(s));
+//			}
 		}
 		catch(Exception ex)
 		{
