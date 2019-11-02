@@ -13,7 +13,15 @@ import java.security.NoSuchAlgorithmException;
 import com.felixalacampagne.utils.Utils;
 
 import fr.delthas.javamp3.Sound;
-
+/**
+ * Based on the JavaMP3 decoder from https://github.com/delthas/JavaMP3.
+ * 
+ * Does not give the same result as FFMPEG
+ * Does not give the same result as MP3SPI
+ * 
+ * Will not include this version. The MP3SPI only requires the JARs if an MD5 is attempted for an MP3 file.
+ *
+ */
 public class DelthasMP3digester extends AbstractAudioDigester {
 
 	@Override
