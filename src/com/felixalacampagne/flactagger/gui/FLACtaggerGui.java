@@ -728,7 +728,6 @@ public void addCCPPopup(JTextField txtField)
             if (undoManager.canUndo()) 
             {
                 undoManager.undo();
-                setExtUpd();
             }
             else {
                System.out.println("Undo: canUndo is false");
@@ -742,7 +741,6 @@ public void addCCPPopup(JTextField txtField)
            if (undoManager.canRedo()) 
            {
                undoManager.redo();
-               setExtUpd();
            }
            else 
            {
@@ -763,7 +761,6 @@ public void addCCPPopup(JTextField txtField)
         @Override
         public void actionPerformed(ActionEvent ae) {
             txtField.cut();
-            setExtUpd();
         }
     };
 
