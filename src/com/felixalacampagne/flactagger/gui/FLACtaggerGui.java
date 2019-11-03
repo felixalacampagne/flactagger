@@ -38,6 +38,8 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -196,8 +198,9 @@ final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlac
 	task.execute();
 }
 
-// NICETOHAVE: This might be better done as a listener on the text boxes rather than relying
-// on the setters being called.
+// URGENTTOHAVE: Dropping a directory onto an empty field does not enable the buttons
+// So really need to have the button state handled by something listening to the content of the textfield
+// as there is no sensible way to have the setter called from the generic drop handler
 protected void setExtUpd()
 {
 String r= getRootDir();
@@ -293,6 +296,31 @@ private void init()
   DirectorynameTransferHandler.addToComponent(txtRootDir);
   
   addCCPPopup(txtRootDir);
+  DocumentListener txtchangelistener = new DocumentListener()
+  {
+
+	  protected void changed(DocumentEvent e)
+	  {
+		  setExtUpd();
+	  }
+		@Override
+		public void changedUpdate(DocumentEvent e) {
+			changed(e);
+			
+		}
+	
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			changed(e);
+		}
+	
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			changed(e);
+		}
+  };
+  
+  txtRootDir.getDocument().addDocumentListener(txtchangelistener);
   
   JLabel lbl1 = new JLabel("Base directory:");
   lbl1.setLabelFor(txtRootDir); 
@@ -361,6 +389,7 @@ private void init()
   //   Label, textbox to display value, button for file chooser
   txtFlacTagsFile = new JTextField();
   addCCPPopup(txtFlacTagsFile);
+  txtFlacTagsFile.getDocument().addDocumentListener(txtchangelistener);
   
   JLabel lbl2 = new JLabel("Flac tags file:");
   lbl2.setLabelFor(txtFlacTagsFile);
@@ -699,6 +728,7 @@ public void addCCPPopup(JTextField txtField)
             if (undoManager.canUndo()) 
             {
                 undoManager.undo();
+                setExtUpd();
             }
             else {
                System.out.println("Undo: canUndo is false");
@@ -712,6 +742,7 @@ public void addCCPPopup(JTextField txtField)
            if (undoManager.canRedo()) 
            {
                undoManager.redo();
+               setExtUpd();
            }
            else 
            {
@@ -732,6 +763,7 @@ public void addCCPPopup(JTextField txtField)
         @Override
         public void actionPerformed(ActionEvent ae) {
             txtField.cut();
+            setExtUpd();
         }
     };
 
@@ -739,6 +771,7 @@ public void addCCPPopup(JTextField txtField)
         @Override
         public void actionPerformed(ActionEvent ae) {
             txtField.paste();
+            setExtUpd();
         }
     };
 
