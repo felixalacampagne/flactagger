@@ -429,12 +429,6 @@ private void init()
    chkFileMD5.setHorizontalTextPosition(SwingConstants.TRAILING);
    chkFileMD5.setToolTipText("Save the FLAC StreamInfo embedded MD5s");
    
-//   pnl = new JPanel(); 
-//   bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
-//   pnl.setLayout(bl);   
-//   pnl.add(chkMD5);
-//   mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-   
    // Extract and update buttons
    pnl = new JPanel(); 
    bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
@@ -748,7 +742,6 @@ public void addCCPPopup(JTextField txtField)
         @Override
         public void actionPerformed(ActionEvent ae) {
             txtField.paste();
-            //setExtUpd();
         }
     };
 
