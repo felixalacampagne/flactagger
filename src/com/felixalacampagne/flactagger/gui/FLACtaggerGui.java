@@ -81,7 +81,7 @@ private JButton btnUpdate;
 private JTextPane logdisplay;
 
 private Properties settings = new Properties();
-
+ 
 private ActionListener updateAction = new ActionListener(){
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -220,7 +220,7 @@ boolean b = false;
 protected void setRootDir(String root)
 {
 	txtRootDir.setText(root);
-	setExtUpd();
+	//setExtUpd();
 }
 
 protected String cleanPath(String p)
@@ -247,7 +247,7 @@ String root = cleanPath(txtRootDir.getText());
 protected void setFlactagFile(String tagfile)
 {
 	txtFlacTagsFile.setText(tagfile);
-	setExtUpd();
+	//setExtUpd();
 }
 
 protected void setCalcMD5Enabled(boolean enabled)
@@ -280,6 +280,8 @@ private void init()
   JPanel pnl;
   BoxLayout bl;
 
+  UpdatingTxtFieldListener txtfldupd = new UpdatingTxtFieldListener( this::setExtUpd );
+
   
   mainframe = new JFrame("FLACtagger " + BuildInfo.VERSION);
   mainframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -294,33 +296,11 @@ private void init()
   txtRootDir = new JTextField();
   
   DirectorynameTransferHandler.addToComponent(txtRootDir);
-  
-  addCCPPopup(txtRootDir);
-  DocumentListener txtchangelistener = new DocumentListener()
-  {
 
-	  protected void changed(DocumentEvent e)
-	  {
-		  setExtUpd();
-	  }
-		@Override
-		public void changedUpdate(DocumentEvent e) {
-			changed(e);
-			
-		}
-	
-		@Override
-		public void insertUpdate(DocumentEvent e) {
-			changed(e);
-		}
-	
-		@Override
-		public void removeUpdate(DocumentEvent e) {
-			changed(e);
-		}
-  };
-  
-  txtRootDir.getDocument().addDocumentListener(txtchangelistener);
+  addCCPPopup(txtRootDir);
+
+
+  txtRootDir.getDocument().addDocumentListener(txtfldupd);
   
   JLabel lbl1 = new JLabel("Base directory:");
   lbl1.setLabelFor(txtRootDir); 
@@ -360,11 +340,11 @@ private void init()
     	 		
     	 		// Java too stupid to realise when a path is pasted into it, instead it
     	 		// appends the quoted text onto the current directory. Can't find a practical way to
-    	 		// intercept the quotes to try to crudely detected a quoted filename and assume its
-    	 		// a full path name. It's even worse than that. The quoted text is not even interpretted
+    	 		// intercept the quotes so try crudely detect a quoted filename and assume its
+    	 		// a full path name. It's even worse than that. The quoted text is not even interpreted
     	 		// as the name, it's just blindly added to the current directory and then the path
     	 		// is parsed as if the quotes are not there with the result that the name is the last directory
-    	 		// with a quote at the end but not the begining!!
+    	 		// with a quote at the end but not the beginning!!
     	 		String name = sel.getAbsolutePath();
     	 		Matcher mat = Pattern.compile("^.*\"(\\p{Alpha}:.*)\"$").matcher(name);
     	 		if(mat.matches())
@@ -389,7 +369,7 @@ private void init()
   //   Label, textbox to display value, button for file chooser
   txtFlacTagsFile = new JTextField();
   addCCPPopup(txtFlacTagsFile);
-  txtFlacTagsFile.getDocument().addDocumentListener(txtchangelistener);
+  txtFlacTagsFile.getDocument().addDocumentListener(txtfldupd);
   
   JLabel lbl2 = new JLabel("Flac tags file:");
   lbl2.setLabelFor(txtFlacTagsFile);
@@ -768,7 +748,7 @@ public void addCCPPopup(JTextField txtField)
         @Override
         public void actionPerformed(ActionEvent ae) {
             txtField.paste();
-            setExtUpd();
+            //setExtUpd();
         }
     };
 
