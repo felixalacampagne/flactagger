@@ -16,8 +16,9 @@ protected Level logLevel;
    {
       super();
       publishTo = publishto;
-
-      fmt.setFormat("%4$s: %5$s%6$s%n");
+		// Add a tab after the prefix so all prefixes would have the same width, providing
+		// the tabs have suitable stops so the longest prefix (SEVERE) fits inside the first tab stop.
+      fmt.setFormat("%4$s:\t%5$s%6$s%n");
       setFormatter(fmt);
       setLevel(Level.INFO);
    }

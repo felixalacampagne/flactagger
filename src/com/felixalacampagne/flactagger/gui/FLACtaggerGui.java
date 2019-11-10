@@ -49,6 +49,9 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.PlainDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
 import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 
@@ -455,7 +458,7 @@ private void init()
    pnl = new JPanel(); 
    logdisplay = new JTextPane();
    logdisplay.setEditable(false);
-   
+   setTabs(logdisplay);
    // xpnl is required to prevent the JTextPane from wrapping lines instread of allowing
    // the ScrollPane to display horizontal scrollbars (dont' ask me why, I've no idea, I
    // just found it via Google and it appears to be the only way to prevent the line wrapping.
@@ -770,6 +773,22 @@ public void addCCPPopup(JTextField txtField)
     txtField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), redoAction);
     txtField.setComponentPopupMenu(popup);
     
+}
+
+private void setTabs(JTextPane pane)
+{
+   TabStop[] tabs = new TabStop[5];
+   int colsize = 54;
+   for(int i = 0; i<tabs.length; i++)
+   {
+   	tabs[i] = new TabStop(colsize *(i+1), TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+   }
+   TabSet tabset = new TabSet(tabs);
+
+   StyleContext sc = StyleContext.getDefaultStyleContext();
+   AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
+   StyleConstants.TabSet, tabset);
+   pane.setParagraphAttributes(aset, false);	
 }
 
 // Inspiration from answers to https://stackoverflow.com/questions/24433089/jtextarea-settext-undomanager

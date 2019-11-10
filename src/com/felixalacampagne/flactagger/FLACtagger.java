@@ -19,6 +19,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.UnmarshalException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
@@ -32,6 +33,8 @@ import org.jaudiotagger.tag.flac.FlacTag;
 import org.jaudiotagger.tag.id3.AbstractID3v2Frame;
 import org.jaudiotagger.tag.id3.AbstractID3v2Tag;
 import org.jaudiotagger.tag.id3.framebody.FrameBodyUSLT;
+import org.xml.sax.SAXParseException;
+
 import com.felixalacampagne.flactagger.generated.flactags.Directory;
 import com.felixalacampagne.flactagger.generated.flactags.FileList;
 import com.felixalacampagne.flactagger.generated.flactags.FileMetadata;
@@ -665,21 +668,46 @@ private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundEx
 	JAXBContext jc = JAXBContext.newInstance(ctxname);
 	Unmarshaller u = jc.createUnmarshaller(); 
 	AsciiFilterInputStream ascii = new AsciiFilterInputStream(new FileInputStream(lyricsxml));
+	FlacTags lyrics = null;
 	try
 	{
 		JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(ascii), FlacTags.class);
-		FlacTags lyrics = o.getValue();
-		return lyrics;
+		lyrics = o.getValue();
+		
 	}
+	catch(UnmarshalException uex)
+	{
+		decodeUnmarshalException(uex, lyricsxml);
+	}	
    catch(JAXBException xex)
    {
       log.log(Level.SEVERE, "Exception processing " + lyricsxml, xex);
       throw xex;
    }
+
 	finally
 	{
 		Utils.safeClose(ascii);
 	}
+	return lyrics;
+}
+
+private void decodeUnmarshalException(UnmarshalException uex, File file) {
+	Throwable lex = uex.getLinkedException();
+	if(lex instanceof SAXParseException)
+	{
+		SAXParseException sex = (SAXParseException) lex;
+		// Would be nice to align Line under Parse but the console font is not fixed width
+		// alignment is done by tweaking tab size to match width of "SEVERE:" prefix
+
+		log.log(Level.SEVERE, "Parse fail: " + file.getName()+"\n\tLine " + sex.getLineNumber() + "(" + sex.getColumnNumber() + ") " + sex.getMessage());
+
+	}
+	else
+	{
+		log.log(Level.SEVERE, "Exception processing " + file, uex);
+	}
+
 	
 }
 

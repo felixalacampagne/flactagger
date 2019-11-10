@@ -1,6 +1,7 @@
 package com.felixalacampagne.flactagger.gui;
 
 
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -19,8 +20,14 @@ Runnable updater = null;
 
 	  protected void changed(DocumentEvent e)
 	  {
-		  //setExtUpd();
-		  updater.run();
+		  // Keep getting white screen at startup and think it is due to trying to update components
+		  // while they are still initialiseing. This is attempt to avoid the white screen and might
+		  // even be a good idea since the updater could cause more events which might in turn cause
+		  // a conflict. Luckily the updater method is considered to be a Runnable which is just the
+		  // ticket for invokeLater! Unfortunately this is really difficult to debug since it only
+		  // seems to occur on the first invocation of a "session" of invocations.
+		  SwingUtilities.invokeLater(updater);
+		  
 	  }
 		@Override
 		public void changedUpdate(DocumentEvent e) {
