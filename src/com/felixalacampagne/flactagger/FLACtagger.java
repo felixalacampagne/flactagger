@@ -458,7 +458,7 @@ File lyfile = null;
         }
         log.info("Processing FlacTag Directory: " + d.getName());
 
-        byte [] folderjpg = getFolderJPG(dir);
+        Artwork folderjpg = getFolderJPG(dir);
         FileList files = d.getFiles();
         for(FileMetadata ft : files.getFilemetadata())
         {
@@ -562,18 +562,17 @@ return 0;
 
 
 public static final String FOLDER_JPG = "folder.jpg"; 
-private byte[] getFolderJPG(File dir) 
+private Artwork getFolderJPG(File dir) 
 {
-byte [] bjpg = null;
+	Artwork bjpg = null;
 	File fjpg = new File(dir, FOLDER_JPG);
 	
 	if(fjpg.isFile())
 	{
 		try 
 		{
-			InputStream is = new FileInputStream(fjpg);
-			bjpg = new byte[(int) fjpg.length()];
-			is.read(bjpg);
+			Artwork tmpart = ArtworkFactory.createArtworkFromFile(fjpg);
+			bjpg = tmpart;
 		} 
 		catch (Exception e) 
 		{
@@ -656,7 +655,7 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 	return updated;
 }
 
-private boolean updateCoverTag(Tag tag, byte[] folderjpg, String fdisp) 
+private boolean updateCoverTag(Tag tag, Artwork folderjpg, String fdisp) 
 {
 	// Maybe same code can be used for FLAC and MP3 but at moment only
 	// MP3 is being tested/used.
@@ -666,24 +665,25 @@ private boolean updateCoverTag(Tag tag, byte[] folderjpg, String fdisp)
 		return updateCoverTag((AbstractID3v2Tag) tag, folderjpg, fdisp);
 	return false; 
 }
-private boolean updateCoverTag(AbstractID3v2Tag tag, byte[] folderjpg, String fdisp) 
+private boolean updateCoverTag(AbstractID3v2Tag tag, Artwork coverart, String fdisp) 
 {
 	boolean updated = false;
 	
 	// JPG files always start with "FF D8 FF E0 00 10 4A 46 49 46": ÿØÿà JFIF"
-	if(folderjpg != null && (folderjpg.length>10))
+	if(coverart != null)
 	{
+		
 		// 03 - Front cover
 		// APIC [7bytes] image/jpeg [00] [imagetype byte] [00] [imagedata]
 		
-		// TODO Compare existing with new to determine whether a change is really required.
 		List<Artwork> covers = tag.getArtworkList();
 		if(covers.size() == 1)
 		{
-			byte[] origimg = covers.get(0).getBinaryData();
-			if(origimg.length == folderjpg.length)
+			byte[] newbytes = coverart.getBinaryData();
+			byte[] origbytes = covers.get(0).getBinaryData();
+			if(origbytes.length == newbytes.length)
 			{
-				if(Arrays.equals(origimg, folderjpg))
+				if(Arrays.equals(origbytes, newbytes))
 				{
 					log.log(Level.FINE, "Cover art is unchanged, no update required: "+ fdisp);
 					return updated;
@@ -693,24 +693,17 @@ private boolean updateCoverTag(AbstractID3v2Tag tag, byte[] folderjpg, String fd
 		log.fine("Deleting all existing artwork from "+ fdisp);
 		tag.deleteArtworkField();
 		
-		// TODO Rework to avoid directly setting all fields - th API only exposes
-		// a set from file method which is not very efficient...
-		Artwork art = ArtworkFactory.getNew();
-		art.setBinaryData(folderjpg);
-		art.setMimeType(ImageFormats.getMimeTypeForBinarySignature(folderjpg));
-		art.setDescription(PictureTypes.DEFAULT_VALUE);
-		art.setPictureType(PictureTypes.DEFAULT_ID);
+
 		try 
 		{
-			tag.setField(art);
+			tag.setField(coverart);
 			updated = true;
+			log.log(Level.INFO, "Cover art updated: "+ fdisp);
 		} 
 		catch (FieldDataInvalidException e) 
 		{
 			log.log(Level.SEVERE, "Failed to add cover art to: "+ fdisp, e);
 		}
-		log.log(Level.INFO, "Cover art updated: "+ fdisp);
-	
 	}
 	
 	return updated;
