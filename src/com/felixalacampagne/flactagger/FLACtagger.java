@@ -1,4 +1,5 @@
 package com.felixalacampagne.flactagger;
+import java.io.ByteArrayInputStream;
 // 01-Nov-2019 19:04 Gratuitous comment because git keeps erasing my latest version
 import java.io.File;
 import java.io.FileFilter;
@@ -6,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -33,6 +35,10 @@ import org.jaudiotagger.tag.flac.FlacTag;
 import org.jaudiotagger.tag.id3.AbstractID3v2Frame;
 import org.jaudiotagger.tag.id3.AbstractID3v2Tag;
 import org.jaudiotagger.tag.id3.framebody.FrameBodyUSLT;
+import org.jaudiotagger.tag.id3.valuepair.ImageFormats;
+import org.jaudiotagger.tag.images.Artwork;
+import org.jaudiotagger.tag.images.ArtworkFactory;
+import org.jaudiotagger.tag.reference.PictureTypes;
 import org.xml.sax.SAXParseException;
 
 import com.felixalacampagne.flactagger.generated.flactags.Directory;
@@ -99,6 +105,7 @@ private final String rootDir;
 private final ObjectFactory objFact = new ObjectFactory();
 private boolean md5Enabled = false;
 private boolean md5fileEnabled = false;
+private final String EMPTY_LYRIC = "undefined";
 
 
 public FLACtagger()
@@ -451,15 +458,20 @@ File lyfile = null;
         }
         log.info("Processing FlacTag Directory: " + d.getName());
 
+        byte [] folderjpg = getFolderJPG(dir);
         FileList files = d.getFiles();
         for(FileMetadata ft : files.getFilemetadata())
         {
            String trimlyric = ft.getLyric();
+           
+           // If there is no lyric defined then add a default one indicating it is not defined.
+           
            if(trimlyric == null)
-              continue;
+         	  trimlyric = EMPTY_LYRIC;
            trimlyric = trimlyric.trim();
+           
            if(trimlyric.length() < 1)
-              continue;
+         	  trimlyric = EMPTY_LYRIC ;
 			
            // JAXB strips out the CRs but apparently they must be there, at least for mp3tag,
            // so must put them back before adding to the tag. The ? is supposed to avoid
@@ -519,6 +531,8 @@ File lyfile = null;
          		  // TODO add these to the XML output...
          		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getArtist(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getArtist(), fdisp);
+         		  updated = updated | updateCoverTag(tag, folderjpg, fdisp);
+         		  
             	  if(updated)
             	  {
             		  log.info("Updating tag: " + fdisp);
@@ -543,6 +557,31 @@ File lyfile = null;
   } 
 	
 return 0;	
+}
+
+
+
+public static final String FOLDER_JPG = "folder.jpg"; 
+private byte[] getFolderJPG(File dir) 
+{
+byte [] bjpg = null;
+	File fjpg = new File(dir, FOLDER_JPG);
+	
+	if(fjpg.isFile())
+	{
+		try 
+		{
+			InputStream is = new FileInputStream(fjpg);
+			bjpg = new byte[(int) fjpg.length()];
+			is.read(bjpg);
+		} 
+		catch (Exception e) 
+		{
+			// TODO Auto-generated catch block
+			log.severe("Exception reading " + fjpg + ": " + e.getMessage());
+		}
+	}
+	return bjpg;
 }
 
 private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fname)
@@ -614,6 +653,66 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 	
 		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
 	}
+	return updated;
+}
+
+private boolean updateCoverTag(Tag tag, byte[] folderjpg, String fdisp) 
+{
+	// Maybe same code can be used for FLAC and MP3 but at moment only
+	// MP3 is being tested/used.
+	// When the tag is unchanged if the cover is not changed then it might
+	// be useful for FLAC as well.
+	if(tag instanceof AbstractID3v2Tag)
+		return updateCoverTag((AbstractID3v2Tag) tag, folderjpg, fdisp);
+	return false; 
+}
+private boolean updateCoverTag(AbstractID3v2Tag tag, byte[] folderjpg, String fdisp) 
+{
+	boolean updated = false;
+	
+	// JPG files always start with "FF D8 FF E0 00 10 4A 46 49 46": ÿØÿà JFIF"
+	if(folderjpg != null && (folderjpg.length>10))
+	{
+		// 03 - Front cover
+		// APIC [7bytes] image/jpeg [00] [imagetype byte] [00] [imagedata]
+		
+		// TODO Compare existing with new to determine whether a change is really required.
+		List<Artwork> covers = tag.getArtworkList();
+		if(covers.size() == 1)
+		{
+			byte[] origimg = covers.get(0).getBinaryData();
+			if(origimg.length == folderjpg.length)
+			{
+				if(Arrays.equals(origimg, folderjpg))
+				{
+					log.log(Level.FINE, "Cover art is unchanged, no update required: "+ fdisp);
+					return updated;
+				}
+			}
+		}
+		log.fine("Deleting all existing artwork from "+ fdisp);
+		tag.deleteArtworkField();
+		
+		// TODO Rework to avoid directly setting all fields - th API only exposes
+		// a set from file method which is not very efficient...
+		Artwork art = ArtworkFactory.getNew();
+		art.setBinaryData(folderjpg);
+		art.setMimeType(ImageFormats.getMimeTypeForBinarySignature(folderjpg));
+		art.setDescription(PictureTypes.DEFAULT_VALUE);
+		art.setPictureType(PictureTypes.DEFAULT_ID);
+		try 
+		{
+			tag.setField(art);
+			updated = true;
+		} 
+		catch (FieldDataInvalidException e) 
+		{
+			log.log(Level.SEVERE, "Failed to add cover art to: "+ fdisp, e);
+		}
+		log.log(Level.INFO, "Cover art updated: "+ fdisp);
+	
+	}
+	
 	return updated;
 }
 
