@@ -532,6 +532,7 @@ File lyfile = null;
          		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getArtist(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getArtist(), fdisp);
          		  updated = updated | updateCoverTag(tag, folderjpg, fdisp);
+         		  updated = updated | updateTracknumberTag(tag, ft.getTracknumber(), fdisp);
          		  
             	  if(updated)
             	  {
@@ -558,6 +559,7 @@ File lyfile = null;
 	
 return 0;	
 }
+
 
 
 
@@ -653,6 +655,45 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
 	}
 	return updated;
+}
+
+private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp) 
+{
+	// At the moment I don't want to overwrite existing tracknumbers with ones from the XML
+	if(tag.hasField(FieldKey.TRACK))
+		return false;
+	boolean updated = false;
+	try
+	{
+		String fldval = tag.getFirst(FieldKey.TRACK);
+		int tagtrack = safeValueOf(fldval);
+		if((tagtrack != fmdtrack) && (fmdtrack>0))
+		{
+			fldval = String.format("%02d", fmdtrack); // TODO: make the padding configurable
+			tag.setField(FieldKey.TRACK, fldval);
+			log.info("Updated track number to '" + fldval +"'");
+			updated = true;
+		}
+	}
+	catch(Exception ex)
+	{
+		log.log(Level.SEVERE, "Failed to update track number to " + fmdtrack + ": " + fdisp, ex);
+	}
+	return updated;
+}
+
+private int safeValueOf(String s)
+{
+int i = 0;
+	try
+	{
+		i = Integer.valueOf(s);
+	}
+	catch(Exception ex)
+	{
+		log.log(Level.FINE, "Failed to parse to number: " + s, ex);
+	}
+	return i;
 }
 
 private boolean updateCoverTag(Tag tag, Artwork folderjpg, String fdisp) 
