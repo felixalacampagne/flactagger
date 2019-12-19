@@ -275,7 +275,14 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
 		ftx.setTitle(tag.getFirst(FieldKey.TITLE));
+		ftx.setAlbumartist(tag.getFirst(FieldKey.ALBUM_ARTIST));
+		ftx.setComposer(tag.getFirst(FieldKey.COMPOSER));
+		ftx.setComment(tag.getFirst(FieldKey.COMMENT));
 		
+		// Not sure whether the tag library supports the compilation flag
+		String s = tag.getFirst(FieldKey.IS_COMPILATION);
+		boolean b = (!isEmptyString(s)) && (s.equals("1"));
+		ftx.setCompilation(b);
 		
 		String lyric = null;
 		if(tag instanceof FlacTag)
@@ -521,6 +528,9 @@ File lyfile = null;
             		  updated = updateLyricTag((AbstractID3v2Tag)tag, trimlyric, fdisp);
             	  }
 
+         		  // Good chance that this wont be valid, Tag library only supports strings...
+         		  updated = updated | updateFieldTag(tag, FieldKey.IS_COMPILATION, ft.isCompilation() ? "1" : "0", fdisp);            	  
+            	  
             	  // Will this work for FLACs? In theory it should, but the generic stuff didn't work for the LYRICS tag
          		  updated = updated | updateFieldTag(tag, FieldKey.TITLE, ft.getTitle(), fdisp); 
          		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM, ft.getAlbum(), fdisp);
@@ -528,9 +538,12 @@ File lyfile = null;
          		  
          		  // I prefer to keep ALBUM_ARTIST and COMPOSER equal to ARTIST because some Apple apps
          		  // choose the wrong field for display. 
-         		  // TODO add these to the XML output...
-         		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getArtist(), fdisp);
-         		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getArtist(), fdisp);
+         		  
+         		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getAlbumartist(), ft.getArtist(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getComposer(), ft.getArtist(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.COMMENT, ft.getComment(), fdisp);
+         		  
+
          		  updated = updated | updateCoverTag(tag, folderjpg, fdisp);
          		  updated = updated | updateTracknumberTag(tag, ft.getTracknumber(), fdisp);
          		  
@@ -585,16 +598,25 @@ private Artwork getFolderJPG(File dir)
 	return bjpg;
 }
 
-private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fname)
+private boolean isEmptyString(String s)
+{
+	return ((s==null) || (s.isEmpty()));
+}
+
+private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String defaultvalue, String fname)
 {
 	boolean updated = false;
-	if((newvalue==null) || (newvalue.isEmpty()))
+	
+	String updvalue = isEmptyString(newvalue) ? defaultvalue : newvalue;
+	if(isEmptyString(updvalue))
 		return updated;
+	
+	
 	String oldvalue = "<blank>";
 	if(tag.hasField(fld))
 	{
 		oldvalue = tag.getFirst(fld);
-		if(newvalue.equals(oldvalue))
+		if(updvalue.equals(oldvalue))
 		{
 			log.fine("Value is unchanged for field '" + fld.name() + "', no update required: "+ fname);
 			return updated;
@@ -604,19 +626,21 @@ private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fn
 	}
 	TagField tagf;
 	try {
-		tagf = tag.createField(fld, newvalue);
+		tagf = tag.createField(fld, updvalue);
 		tag.addField(tagf);
-		log.info("Updated '"  + fld.name() + "' to '" + newvalue + "' from '" + oldvalue + "'");
+		log.info("Updated '"  + fld.name() + "' to '" + updvalue + "' from '" + oldvalue + "'");
 		updated = true;
 	} 
 	catch (Exception e) 
 	{
 		log.log(Level.SEVERE, "Failed to add value '" + fld.name() + "' to: "+ fname, e);
 	} 
-		
-	
-	
 	return updated;
+}
+
+private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fname)
+{
+	return updateFieldTag(tag, fld, newvalue, null, fname);
 }
 
 private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
