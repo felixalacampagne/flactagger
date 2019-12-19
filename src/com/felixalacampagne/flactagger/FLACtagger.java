@@ -256,7 +256,14 @@ List<FileMetadata> files = null;
 	}
 	return flaccnt;
 }
-	
+
+
+private String getValueOrNull(String val)
+{
+	return ((val == null) || (val.isEmpty())) ? null : val; 
+}
+
+
 // This should work for FLAC and MP3 if the abstract Fieldkey tag names are mapped correctly
 public FileMetadata getFileMetadata(File f)
 {
@@ -275,13 +282,13 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
 		ftx.setTitle(tag.getFirst(FieldKey.TITLE));
-		ftx.setAlbumartist(tag.getFirst(FieldKey.ALBUM_ARTIST));
-		ftx.setComposer(tag.getFirst(FieldKey.COMPOSER));
-		ftx.setComment(tag.getFirst(FieldKey.COMMENT));
+		ftx.setAlbumartist(getValueOrNull(tag.getFirst(FieldKey.ALBUM_ARTIST)));
+		ftx.setComposer(getValueOrNull(tag.getFirst(FieldKey.COMPOSER)));
+		ftx.setComment(getValueOrNull(tag.getFirst(FieldKey.COMMENT)));
 		
 		// Not sure whether the tag library supports the compilation flag
 		String s = tag.getFirst(FieldKey.IS_COMPILATION);
-		boolean b = (!isEmptyString(s)) && (s.equals("1"));
+		Boolean b = (!isEmptyString(s)) && (s.equals("1")) ? true : null;
 		ftx.setCompilation(b);
 		
 		String lyric = null;
