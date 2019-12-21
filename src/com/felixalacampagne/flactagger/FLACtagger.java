@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -105,7 +106,7 @@ private final String rootDir;
 private final ObjectFactory objFact = new ObjectFactory();
 private boolean md5Enabled = false;
 private boolean md5fileEnabled = false;
-private final String EMPTY_LYRIC = "undefined";
+private final String EMPTY_LYRIC = "<blank>";
 
 
 public FLACtagger()
@@ -196,7 +197,6 @@ boolean flacdirlyrics = false;
 	// the .md5 file(s)
 	if(isMd5fileEnabled())
 	{
-		
 		saveFolderaudioMD5(rootDir, alllyrics);
 		saveCuesheet(rootDir, alllyrics); // TODO: give this it's own option
 	}	
@@ -285,6 +285,8 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setAlbumartist(getValueOrNull(tag.getFirst(FieldKey.ALBUM_ARTIST)));
 		ftx.setComposer(getValueOrNull(tag.getFirst(FieldKey.COMPOSER)));
 		ftx.setComment(getValueOrNull(tag.getFirst(FieldKey.COMMENT)));
+		ftx.setYear(getValueOrNull(tag.getFirst(FieldKey.YEAR))); // TODO: Use a (normal) Integer
+		ftx.setGenre(getValueOrNull(tag.getFirst(FieldKey.GENRE)));
 		
 		// Not sure whether the tag library supports the compilation flag
 		String s = tag.getFirst(FieldKey.IS_COMPILATION);
@@ -536,7 +538,8 @@ File lyfile = null;
             	  }
 
          		  // Good chance that this wont be valid, Tag library only supports strings...
-         		  updated = updated | updateFieldTag(tag, FieldKey.IS_COMPILATION, ft.isCompilation() ? "1" : "0", fdisp);            	  
+
+         		  updated = updated | updateFieldTag(tag, FieldKey.IS_COMPILATION, ft.isCompilation(), fdisp);            	  
             	  
             	  // Will this work for FLACs? In theory it should, but the generic stuff didn't work for the LYRICS tag
          		  updated = updated | updateFieldTag(tag, FieldKey.TITLE, ft.getTitle(), fdisp); 
@@ -549,7 +552,8 @@ File lyfile = null;
          		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getAlbumartist(), ft.getArtist(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getComposer(), ft.getArtist(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.COMMENT, ft.getComment(), fdisp);
-         		  
+         		  updated = updated | updateFieldTag(tag, FieldKey.YEAR, ft.getYear(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.GENRE, ft.getGenre(), fdisp);
 
          		  updated = updated | updateCoverTag(tag, folderjpg, fdisp);
          		  updated = updated | updateTracknumberTag(tag, ft.getTracknumber(), fdisp);
@@ -649,6 +653,15 @@ private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fn
 {
 	return updateFieldTag(tag, fld, newvalue, null, fname);
 }
+
+private boolean updateFieldTag(Tag tag, FieldKey fld, Boolean newvalue, String fname)
+{
+	if(newvalue == null)
+		return false;
+
+	return updateFieldTag(tag, fld, newvalue ? "1" : "0", null, fname);
+}
+
 
 private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 {
@@ -1072,7 +1085,7 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	JAXBContext jc = JAXBContext.newInstance(ctxname);	
 	FileOutputStream fos = null;
 	
-
+		sortTags(lyrics);
 		
 	   Marshaller m = jc.createMarshaller();
 	   m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
@@ -1104,6 +1117,38 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	   }
 	   
 
+}
+
+
+// Sort the files in each directory according to the sort criteria.
+// Default is track order - this is the same as filename order for 
+// 'normal' albums, ie. with filenames like '<track> <title>', but not
+// for compilations, which do not include the track in the filename. 
+// Compilations consist of multiple albums merged together. Sorting on the
+// filename mixes the albums in the output file, sorting on the track 
+// number keeps the albums together in the output file which makes
+// looking for lyrics easier.
+// TODO: make sort order configurable, ie. allow the Comparator to be
+// defined externally.
+private void sortTags(FlacTags lyrics) {
+	
+	Comparator<FileMetadata> compareByTrack = 
+			(FileMetadata tag1, FileMetadata tag2) -> 
+	{
+		if(tag1 == null)
+			return -1;
+		if(tag2 == null)
+			return -1;
+		return tag1.getTracknumber().compareTo( tag2.getTracknumber());
+   };
+   
+   Comparator<FileMetadata> tagsorter = compareByTrack;
+	for(Directory dir : lyrics.getDirectory())
+	{
+		List<FileMetadata> tags = dir.getFiles().getFilemetadata();
+		tags.sort(tagsorter);
+	}
+	
 }
 
 private String getFileDispName(File f)

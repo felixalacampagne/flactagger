@@ -9,7 +9,7 @@
 
 <!-- Appears there is no "official" ant task for doing "xjc". There was an ant task included in the old jaxws-jaxb library 
      which was used before JAXB became part of standard Java. Unfortunately the tools part of jaxb was not included.
-     The XJCFacade class is in the tools.jar of the JDK. It's not documented by appears to require the same parameters
+     The XJCFacade class is in the tools.jar of the JDK. It's not documented but appears to require the same parameters
      as the xjc.exe
  -->
 <!-- lyrics.xsd -b lyrics.xjb -d src -->
