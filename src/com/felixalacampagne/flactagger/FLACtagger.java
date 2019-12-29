@@ -278,6 +278,11 @@ public FileMetadata getFileMetadata(File f)
 		ftx = objFact.createFileMetadata();
 		ftx.setName(f.getName());
 		
+		// NB Tracknumber can be of the form [track]/[disc]. The disc number
+		// is ignored str2Int which is fine as I do not want the disc number
+		// to contaminate the track number.
+		// TODO: Add a field for disc number and use the disc number
+		// embedded in the tracknumber.
 		ftx.setTracknumber(Utils.str2Int(tag.getFirst(FieldKey.TRACK)));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
@@ -740,27 +745,14 @@ int i = 0;
 	return i;
 }
 
+// Works for both MP3 and FLAC
 private boolean updateCoverTag(Tag tag, Artwork folderjpg, String fdisp) 
 {
-	// Maybe same code can be used for FLAC and MP3 but at moment only
-	// MP3 is being tested/used.
-	// When the tag is unchanged if the cover is not changed then it might
-	// be useful for FLAC as well.
-	if(tag instanceof AbstractID3v2Tag)
-		return updateCoverTag((AbstractID3v2Tag) tag, folderjpg, fdisp);
-	return false; 
-}
-private boolean updateCoverTag(AbstractID3v2Tag tag, Artwork coverart, String fdisp) 
-{
-	boolean updated = false;
+boolean updated = false;
 	
-	// JPG files always start with "FF D8 FF E0 00 10 4A 46 49 46": ÿØÿà JFIF"
+	Artwork coverart = folderjpg;
 	if(coverart != null)
 	{
-		
-		// 03 - Front cover
-		// APIC [7bytes] image/jpeg [00] [imagetype byte] [00] [imagedata]
-		
 		List<Artwork> covers = tag.getArtworkList();
 		if(covers.size() == 1)
 		{
@@ -777,7 +769,6 @@ private boolean updateCoverTag(AbstractID3v2Tag tag, Artwork coverart, String fd
 		}
 		log.fine("Deleting all existing artwork from "+ fdisp);
 		tag.deleteArtworkField();
-		
 
 		try 
 		{
@@ -791,7 +782,7 @@ private boolean updateCoverTag(AbstractID3v2Tag tag, Artwork coverart, String fd
 		}
 	}
 	
-	return updated;
+	return updated; 
 }
 
 private boolean updateLyricTag(AbstractID3v2Tag tag, String newlyric, String fname)
@@ -1135,10 +1126,12 @@ private void sortTags(FlacTags lyrics) {
 	Comparator<FileMetadata> compareByTrack = 
 			(FileMetadata tag1, FileMetadata tag2) -> 
 	{
-		if(tag1 == null)
+		if((tag1 == null) || (tag1.getTracknumber() == null))
 			return -1;
 		if(tag2 == null)
 			return -1;
+
+		
 		return tag1.getTracknumber().compareTo( tag2.getTracknumber());
    };
    
