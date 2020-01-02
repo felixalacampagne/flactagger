@@ -1,13 +1,11 @@
 package com.felixalacampagne.flactagger;
-import java.io.ByteArrayInputStream;
-// 01-Nov-2019 19:04 Gratuitous comment because git keeps erasing my latest version
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -36,10 +34,8 @@ import org.jaudiotagger.tag.flac.FlacTag;
 import org.jaudiotagger.tag.id3.AbstractID3v2Frame;
 import org.jaudiotagger.tag.id3.AbstractID3v2Tag;
 import org.jaudiotagger.tag.id3.framebody.FrameBodyUSLT;
-import org.jaudiotagger.tag.id3.valuepair.ImageFormats;
 import org.jaudiotagger.tag.images.Artwork;
 import org.jaudiotagger.tag.images.ArtworkFactory;
-import org.jaudiotagger.tag.reference.PictureTypes;
 import org.xml.sax.SAXParseException;
 
 import com.felixalacampagne.flactagger.generated.flactags.Directory;
@@ -95,10 +91,8 @@ private static final Logger jatlog = Logger.getLogger("org.jaudiotagger");
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.severe("Failed to process " + lyricsxml + ": " + e.getMessage());
 		}
-
 	}
 
 	
@@ -279,7 +273,7 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setName(f.getName());
 		
 		// NB Tracknumber can be of the form [track]/[disc]. The disc number
-		// is ignored str2Int which is fine as I do not want the disc number
+		// is intentionally ignored by str2Int since I do not want the disc number
 		// to contaminate the track number.
 		// TODO: Add a field for disc number and use the disc number
 		// embedded in the tracknumber.
@@ -347,11 +341,17 @@ public FileMetadata getFileMetadata(File f)
 	} 
 	catch (Exception e) 
 	{
-		e.printStackTrace();
+		log.severe("Failed to read TAG data from " + getNameWithParent(f) + ": " + e.getMessage());
 	} 
 	
 	getAudioDigest(f, ftx);
 	return ftx;
+}
+
+// TODO Put this in Utils!
+private String getNameWithParent(File f)
+{
+	return f.getParentFile().getName() + File.separator + f.getName();
 }
 
 public List<File> getFiles(File dir)
@@ -381,9 +381,7 @@ List<File> files = new ArrayList<File>();
 	return files;
 }
 
-
-
-public int update(String alyricsxml) throws Exception
+private List<File> buildLyricsList (String alyricsxml) throws Exception
 {
 List<File> lyricstoprocess = new ArrayList<File>();
 File rootdirf = new File(rootDir);
@@ -438,11 +436,24 @@ File lyfile = null;
    {
       if(! lyfile.isFile())
       {
-         log.severe("No Lyrics specifed or " + lyfile.getAbsolutePath() + "does not exist!");
-         return 1;
+         log.severe("Lyrics file " + lyfile.getAbsolutePath() + "does not exist!");
       }
-      lyricstoprocess.add(lyfile);   
+      else
+      {
+      	lyricstoprocess.add(lyfile);
+      }
    }
+	return lyricstoprocess;
+}
+
+public int update(String alyricsxml) throws Exception
+{
+List<File> lyricstoprocess = buildLyricsList(alyricsxml);
+File rootdirf = new File(rootDir);
+
+  // List failed files at the end as it is too easy to miss one or two failures
+  // in a long list of processed files
+  List<String> fails = new ArrayList<String>();
    
   for(File flyricsxml : lyricstoprocess)
   {
@@ -451,7 +462,7 @@ File lyfile = null;
 
      if(lyrics == null)
      {
-        log.severe("No Lyrics loaded from " + flyricsxml + "!");
+        log.severe("No tags loaded from " + flyricsxml + "!");
         return 1;
      }
 
@@ -575,14 +586,24 @@ File lyfile = null;
               }
               else
               {
+            	  // TODO: Should create a new tag instead of ignoring!
                  log.severe("WARN: No metadata tag present in file, unable to update: " + fdisp);
               }
            }
            catch(Exception ex)
            {
               log.severe("Exception reading " + fdisp + ": " + ex.getMessage());
+              fails.add(fdisp + ": " + ex.getMessage());
            }				
         }
+     }
+     
+     // List failed files
+     if(fails.size() > 0)
+     {
+   	  StringBuilder sb = new StringBuilder("The following files could not be processed:");
+   	  fails.forEach(fail -> sb.append(fail).append("\n"));
+   	  log.severe(sb.toString());
      }
   } 
 	
@@ -607,7 +628,6 @@ private Artwork getFolderJPG(File dir)
 		} 
 		catch (Exception e) 
 		{
-			// TODO Auto-generated catch block
 			log.severe("Exception reading " + fjpg + ": " + e.getMessage());
 		}
 	}
@@ -718,7 +738,7 @@ private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp)
 		int tagtrack = safeValueOf(fldval);
 		if((tagtrack != fmdtrack) && (fmdtrack>0))
 		{
-			fldval = String.format("%02d", fmdtrack); // TODO: make the padding configurable
+			fldval = String.format("%02d", fmdtrack);
 			tag.setField(FieldKey.TRACK, fldval);
 			log.info("Updated track number to '" + fldval +"'");
 			updated = true;
@@ -964,8 +984,7 @@ public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundExc
    }
    catch (IOException e)
    {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+   	log.severe("Failed to save cuesheet for " + lyricsxml + ": " + e.getMessage());
    }
    finally
    {
@@ -1059,8 +1078,7 @@ public void saveFolderaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFo
    }
    catch (IOException e)
    {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+   	log.severe("Failed to save lyric file: " + lyricsxml + ": " + e.getMessage());
    }
    finally
    {
@@ -1220,3 +1238,4 @@ public void setMd5Enabled(boolean md5Enabled)
 
 
 } // End of class
+
