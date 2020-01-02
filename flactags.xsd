@@ -48,15 +48,33 @@
 
   <xs:complexType name="FileMetadata">
     <xs:sequence>
-      <xs:element type="xs:string"  name="name"/>
-      <xs:element type="xs:int   "  name="tracknumber"   minOccurs="0"/>
-      <xs:element type="xs:string"  name="artist"        minOccurs="0"/>
-      <xs:element type="xs:string"  name="album"         minOccurs="0"/>
-      <xs:element type="xs:string"  name="title"         minOccurs="0"/>
-      <xs:element type="xs:string"  name="filemd5"       minOccurs="0"/>
-      <xs:element type="xs:string"  name="calcpcmmd5"    minOccurs="0"/>
-      <xs:element type="xs:string"  name="strmpcmmd5"    minOccurs="0"/>
-      <xs:element type="xs:string"  name="lyric"         minOccurs="0"/>
+    	<xs:element type="xs:string" name="name" />
+    	<xs:element type="xs:int   " name="tracknumber" minOccurs="0" />
+    	<xs:element type="xs:string" name="artist" minOccurs="0" />
+    	<xs:element type="xs:string" name="album" minOccurs="0" />
+    	<xs:element type="xs:string" name="title" minOccurs="0" />
+    	<xs:element type="xs:string" name="filemd5" minOccurs="0" />
+    	<xs:element type="xs:string" name="calcpcmmd5" minOccurs="0" />
+    	<xs:element type="xs:string" name="strmpcmmd5" minOccurs="0" />
+
+    	<xs:element name="albumartist" type="xs:string" maxOccurs="1"
+    		minOccurs="0">
+    	</xs:element>
+    	<xs:element name="composer" type="xs:string" maxOccurs="1"
+    		minOccurs="0">
+    	</xs:element>
+    	<xs:element name="comment" type="xs:string" maxOccurs="1"
+    		minOccurs="0">
+    	</xs:element>
+    	<xs:element name="year" type="xs:string" maxOccurs="1"
+    		minOccurs="0">
+    	</xs:element>
+    	<xs:element name="compilation" type="xs:boolean" maxOccurs="1"
+    		minOccurs="0">
+    	</xs:element>
+            <xs:element name="genre" type="xs:string" maxOccurs="1" minOccurs="0"></xs:element>
+            <xs:element type="xs:string" name="lyric" minOccurs="0" />
+
     </xs:sequence>
   </xs:complexType>
 

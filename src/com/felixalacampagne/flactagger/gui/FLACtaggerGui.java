@@ -38,6 +38,8 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -47,6 +49,9 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.PlainDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
 import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 
@@ -79,7 +84,7 @@ private JButton btnUpdate;
 private JTextPane logdisplay;
 
 private Properties settings = new Properties();
-
+ 
 private ActionListener updateAction = new ActionListener(){
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -196,8 +201,9 @@ final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlac
 	task.execute();
 }
 
-// NICETOHAVE: This might be better done as a listener on the text boxes rather than relying
-// on the setters being called.
+// URGENTTOHAVE: Dropping a directory onto an empty field does not enable the buttons
+// So really need to have the button state handled by something listening to the content of the textfield
+// as there is no sensible way to have the setter called from the generic drop handler
 protected void setExtUpd()
 {
 String r= getRootDir();
@@ -217,7 +223,7 @@ boolean b = false;
 protected void setRootDir(String root)
 {
 	txtRootDir.setText(root);
-	setExtUpd();
+	//setExtUpd();
 }
 
 protected String cleanPath(String p)
@@ -244,7 +250,7 @@ String root = cleanPath(txtRootDir.getText());
 protected void setFlactagFile(String tagfile)
 {
 	txtFlacTagsFile.setText(tagfile);
-	setExtUpd();
+	//setExtUpd();
 }
 
 protected void setCalcMD5Enabled(boolean enabled)
@@ -277,6 +283,8 @@ private void init()
   JPanel pnl;
   BoxLayout bl;
 
+  UpdatingTxtFieldListener txtfldupd = new UpdatingTxtFieldListener( this::setExtUpd );
+
   
   mainframe = new JFrame("FLACtagger " + BuildInfo.VERSION);
   mainframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -291,8 +299,11 @@ private void init()
   txtRootDir = new JTextField();
   
   DirectorynameTransferHandler.addToComponent(txtRootDir);
-  
+
   addCCPPopup(txtRootDir);
+
+
+  txtRootDir.getDocument().addDocumentListener(txtfldupd);
   
   JLabel lbl1 = new JLabel("Base directory:");
   lbl1.setLabelFor(txtRootDir); 
@@ -332,11 +343,11 @@ private void init()
     	 		
     	 		// Java too stupid to realise when a path is pasted into it, instead it
     	 		// appends the quoted text onto the current directory. Can't find a practical way to
-    	 		// intercept the quotes to try to crudely detected a quoted filename and assume its
-    	 		// a full path name. It's even worse than that. The quoted text is not even interpretted
+    	 		// intercept the quotes so try crudely detect a quoted filename and assume its
+    	 		// a full path name. It's even worse than that. The quoted text is not even interpreted
     	 		// as the name, it's just blindly added to the current directory and then the path
     	 		// is parsed as if the quotes are not there with the result that the name is the last directory
-    	 		// with a quote at the end but not the begining!!
+    	 		// with a quote at the end but not the beginning!!
     	 		String name = sel.getAbsolutePath();
     	 		Matcher mat = Pattern.compile("^.*\"(\\p{Alpha}:.*)\"$").matcher(name);
     	 		if(mat.matches())
@@ -361,6 +372,7 @@ private void init()
   //   Label, textbox to display value, button for file chooser
   txtFlacTagsFile = new JTextField();
   addCCPPopup(txtFlacTagsFile);
+  txtFlacTagsFile.getDocument().addDocumentListener(txtfldupd);
   
   JLabel lbl2 = new JLabel("Flac tags file:");
   lbl2.setLabelFor(txtFlacTagsFile);
@@ -420,12 +432,6 @@ private void init()
    chkFileMD5.setHorizontalTextPosition(SwingConstants.TRAILING);
    chkFileMD5.setToolTipText("Save the FLAC StreamInfo embedded MD5s");
    
-//   pnl = new JPanel(); 
-//   bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
-//   pnl.setLayout(bl);   
-//   pnl.add(chkMD5);
-//   mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-   
    // Extract and update buttons
    pnl = new JPanel(); 
    bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
@@ -452,7 +458,7 @@ private void init()
    pnl = new JPanel(); 
    logdisplay = new JTextPane();
    logdisplay.setEditable(false);
-   
+   setTabs(logdisplay);
    // xpnl is required to prevent the JTextPane from wrapping lines instread of allowing
    // the ScrollPane to display horizontal scrollbars (dont' ask me why, I've no idea, I
    // just found it via Google and it appears to be the only way to prevent the line wrapping.
@@ -767,6 +773,22 @@ public void addCCPPopup(JTextField txtField)
     txtField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), redoAction);
     txtField.setComponentPopupMenu(popup);
     
+}
+
+private void setTabs(JTextPane pane)
+{
+   TabStop[] tabs = new TabStop[5];
+   int colsize = 54;
+   for(int i = 0; i<tabs.length; i++)
+   {
+   	tabs[i] = new TabStop(colsize *(i+1), TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+   }
+   TabSet tabset = new TabSet(tabs);
+
+   StyleContext sc = StyleContext.getDefaultStyleContext();
+   AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
+   StyleConstants.TabSet, tabset);
+   pane.setParagraphAttributes(aset, false);	
 }
 
 // Inspiration from answers to https://stackoverflow.com/questions/24433089/jtextarea-settext-undomanager

@@ -15,16 +15,11 @@ import com.felixalacampagne.utils.Utils;
 import com.sun.istack.internal.logging.Logger;
 
 // Requires the "JustFLAC" library
-public class FLACdigester implements PCMProcessor
+public class FLACdigester extends AbstractAudioDigester implements PCMProcessor
 {
-private final Logger log = Logger.getLogger(FLACdigester.class);
-protected MessageDigest md = null;
-protected String streaminfoMD5 = null;
-protected String calculatedMD5 = null;
 
 
-
-
+	@Override
 	public String getAudioDigest(File flacFile) throws IOException
 	{
 	FileInputStream is = null;
@@ -50,51 +45,8 @@ protected String calculatedMD5 = null;
 		
 		return calculatedMD5;
 	}
-
-	@Override
-	public void processPCM(ByteData bd)
-	{
-		// Figured out why the MD5 calculated here was different to the ffmpeg audioonly md5...
-		// the byte array is not filled! getLen() MUST be used to determine the real
-		// amount of data in the array... and voila! the md5s are the same as for ffmpeg!
-		// Obvious really, I suppose, but then isn't everything in hindsight!
-		int bdlen = bd.getLen();
-        md.update(bd.getData(), 0, bdlen);
-	}
-
-	@Override
-	public void processStreamInfo(StreamInfo si)
-	{
-		// This is called at the start
-	   byte[] simd5 = si.getMD5sum();
-	   streaminfoMD5 = bytesToHex(simd5);
-
-		try
-		{
-			md = MessageDigest.getInstance("MD5");
-			md.reset();
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			e.printStackTrace();
-		}
-		
-	}
 	
-	public String bytesToHex(byte[] bs)
-	{
-	   if((bs == null) || (bs.length < 1))
-	   {
-	      return null;
-	   }
-	   StringBuffer sb = new StringBuffer();
-	   for (byte b : bs) 
-	   {
-	   	sb.append(String.format("%02x", b & 0xff));
-	   }          
-	   return sb.toString();
-	}
-
+	@Override
 	public String getStreamInfoMD5(File flacFile) throws IOException
 	{
 	FileInputStream is = null;
@@ -122,14 +74,37 @@ protected String calculatedMD5 = null;
 
 	}
 	
-	public String getStreaminfoMD5()
+	
+	// PCMProcessor
+	@Override
+	public void processPCM(ByteData bd)
 	{
-		return streaminfoMD5;
+		// Figured out why the MD5 calculated here was different to the ffmpeg audioonly md5...
+		// the byte array is not filled! getLen() MUST be used to determine the real
+		// amount of data in the array... and voila! the md5s are the same as for ffmpeg!
+		// Obvious really, I suppose, but then isn't everything in hindsight!
+		int bdlen = bd.getLen();
+      md.update(bd.getData(), 0, bdlen);
 	}
 
-	public String getCalculatedMD5()
+	@Override
+	public void processStreamInfo(StreamInfo si)
 	{
-		return calculatedMD5;
+		// This is called at the start
+	   byte[] simd5 = si.getMD5sum();
+	   streaminfoMD5 = bytesToHex(simd5);
+
+		try
+		{
+			md = MessageDigest.getInstance("MD5");
+			md.reset();
+		}
+		catch (NoSuchAlgorithmException e)
+		{
+			e.printStackTrace();
+		}
+		
 	}
+	
 
 }

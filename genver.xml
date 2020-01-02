@@ -18,10 +18,13 @@ private BuildInfo() {}
 </echo>
 </target>
 
-	<target name="autobuild" depends="genbuildinfo">
+	<target name="autobuild">
 		<!-- Dummy target because it appears Eclipse is constantly performing builds
 		     including after a git commit which causes the updated flags to 
 		     show, even though nothing has been changed. 
+		     Add 
+		        depends="genbuildinfo"
+		     to target to actually recreate the buildinfo everytime eclipse does an autobuild
 		  -->
 		<echo>autobuild target invoked</echo>
 	</target>

@@ -78,7 +78,9 @@ public class Utils
    }
    
    /**
-    * Convert string to Integer
+    * Convert string to Integer. Uses the first digits up to 
+    * the first non-digit (unlike valueOf, which throws an exception if there
+    * are any non-digits in the string)
     * @param str
     * @return Integer value, null if str is not a valid decimal number
     */
@@ -87,6 +89,7 @@ public class Utils
    Integer i = null;
       try
       {
+      	str = str.replaceFirst("[^0-9].*$", "");
          i = Integer.valueOf(str);
       }
       catch(Exception ex)

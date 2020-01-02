@@ -1,16 +1,19 @@
 package com.felixalacampagne.flactagger;
-
+import java.io.ByteArrayInputStream;
+// 01-Nov-2019 19:04 Gratuitous comment because git keeps erasing my latest version
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,17 +22,25 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.UnmarshalException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
-
+import org.jaudiotagger.tag.FieldDataInvalidException;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagField;
 import org.jaudiotagger.tag.flac.FlacTag;
-import org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField;
+import org.jaudiotagger.tag.id3.AbstractID3v2Frame;
+import org.jaudiotagger.tag.id3.AbstractID3v2Tag;
+import org.jaudiotagger.tag.id3.framebody.FrameBodyUSLT;
+import org.jaudiotagger.tag.id3.valuepair.ImageFormats;
+import org.jaudiotagger.tag.images.Artwork;
+import org.jaudiotagger.tag.images.ArtworkFactory;
+import org.jaudiotagger.tag.reference.PictureTypes;
+import org.xml.sax.SAXParseException;
 
 import com.felixalacampagne.flactagger.generated.flactags.Directory;
 import com.felixalacampagne.flactagger.generated.flactags.FileList;
@@ -95,6 +106,7 @@ private final String rootDir;
 private final ObjectFactory objFact = new ObjectFactory();
 private boolean md5Enabled = false;
 private boolean md5fileEnabled = false;
+private final String EMPTY_LYRIC = "<blank>";
 
 
 public FLACtagger()
@@ -185,8 +197,7 @@ boolean flacdirlyrics = false;
 	// the .md5 file(s)
 	if(isMd5fileEnabled())
 	{
-		
-		saveFlacaudioMD5(rootDir, alllyrics);
+		saveFolderaudioMD5(rootDir, alllyrics);
 		saveCuesheet(rootDir, alllyrics); // TODO: give this it's own option
 	}	
 	
@@ -245,8 +256,15 @@ List<FileMetadata> files = null;
 	}
 	return flaccnt;
 }
-	
-// TODO: Artist and album should be per file instead of per directory to accommodate compilations
+
+
+private String getValueOrNull(String val)
+{
+	return ((val == null) || (val.isEmpty())) ? null : val; 
+}
+
+
+// This should work for FLAC and MP3 if the abstract Fieldkey tag names are mapped correctly
 public FileMetadata getFileMetadata(File f)
 {
 	FileMetadata ftx = null;
@@ -260,10 +278,36 @@ public FileMetadata getFileMetadata(File f)
 		ftx = objFact.createFileMetadata();
 		ftx.setName(f.getName());
 		
+		// NB Tracknumber can be of the form [track]/[disc]. The disc number
+		// is ignored str2Int which is fine as I do not want the disc number
+		// to contaminate the track number.
+		// TODO: Add a field for disc number and use the disc number
+		// embedded in the tracknumber.
 		ftx.setTracknumber(Utils.str2Int(tag.getFirst(FieldKey.TRACK)));
 		ftx.setArtist(tag.getFirst(FieldKey.ARTIST));
 		ftx.setAlbum(tag.getFirst(FieldKey.ALBUM));
-		String lyric = tag.getFirst(FLAC_LYRICS_TAG);
+		ftx.setTitle(tag.getFirst(FieldKey.TITLE));
+		ftx.setAlbumartist(getValueOrNull(tag.getFirst(FieldKey.ALBUM_ARTIST)));
+		ftx.setComposer(getValueOrNull(tag.getFirst(FieldKey.COMPOSER)));
+		ftx.setComment(getValueOrNull(tag.getFirst(FieldKey.COMMENT)));
+		ftx.setYear(getValueOrNull(tag.getFirst(FieldKey.YEAR))); // TODO: Use a (normal) Integer
+		ftx.setGenre(getValueOrNull(tag.getFirst(FieldKey.GENRE)));
+		
+		// Not sure whether the tag library supports the compilation flag
+		String s = tag.getFirst(FieldKey.IS_COMPILATION);
+		Boolean b = (!isEmptyString(s)) && (s.equals("1")) ? true : null;
+		ftx.setCompilation(b);
+		
+		String lyric = null;
+		if(tag instanceof FlacTag)
+		{
+			// Unfortunately lyric is empty when FieldKey.LYRICS is used for a FLAC file
+			lyric = tag.getFirst(FLAC_LYRICS_TAG);
+		}
+		else
+		{
+			lyric = tag.getFirst(FieldKey.LYRICS);
+		}
 		if(lyric != null)
 		{
 			// Leaving the CRLF in results in lines terminated with the text "&#xD;" and a normal linefeed
@@ -329,7 +373,7 @@ List<File> files = new ArrayList<File>();
 				if(pathname.isDirectory())
 					return false;
 				String name = pathname.getName();
-				boolean rc = name.matches("(?i)^.*\\.flac$"); 
+				boolean rc = name.matches("(?i)^.*\\.(flac|mp3)$"); 
 				return rc;
 			}
 		})));
@@ -371,7 +415,7 @@ File lyfile = null;
             if(pathname.isDirectory())
                return false;
             String name = pathname.getName();
-            // Make big assumption that all XML files in the directory as lyrics files!!
+            // Make big assumption that all XML files in the directory are lyrics files!!
             boolean rc = name.matches("(?i)^.*\\.xml$"); 
             return rc;
          }
@@ -435,15 +479,20 @@ File lyfile = null;
         }
         log.info("Processing FlacTag Directory: " + d.getName());
 
+        Artwork folderjpg = getFolderJPG(dir);
         FileList files = d.getFiles();
         for(FileMetadata ft : files.getFilemetadata())
         {
            String trimlyric = ft.getLyric();
+           
+           // If there is no lyric defined then add a default one indicating it is not defined.
+           
            if(trimlyric == null)
-              continue;
+         	  trimlyric = EMPTY_LYRIC;
            trimlyric = trimlyric.trim();
+           
            if(trimlyric.length() < 1)
-              continue;
+         	  trimlyric = EMPTY_LYRIC ;
 			
            // JAXB strips out the CRs but apparently they must be there, at least for mp3tag,
            // so must put them back before adding to the tag. The ? is supposed to avoid
@@ -477,30 +526,56 @@ File lyfile = null;
            try
            {
               AudioFile af = AudioFileIO.read(f);
-			
+              boolean updated = false;
               Tag tag = af.getTag();
-              if((tag != null) && (tag instanceof FlacTag ))
+              // Looks like it might be possible to support import/update of MP3 lyric tags from here.
+              // Currently I have a whole bunch of mp3 lyric XML files generated from mp3tag using the
+              // flactags schema... ID3v23
+              if(tag != null)
               {
-                 if(tag.hasField(FLAC_LYRICS_TAG))
-                 {
-                    String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
-                    if(trimlyric.equals(currlyric))
-                    {
-                       log.info("Lyric is already present, no update required: "+ fdisp);
-                       continue;
-                    }
-                    log.info("Removing existing lyric from "+ fdisp);
-                    tag.deleteField(FLAC_LYRICS_TAG);
-                 }
-                 // TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-                 TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, trimlyric);
-                 tag.addField(lyrictf);
-                 log.info("updating: " + fdisp);
-                 af.commit();
+            	  if(tag instanceof FlacTag )
+            	  {
+            		  updated = updateLyricTag((FlacTag) tag, trimlyric, fdisp);
+            	  }
+            	  else if(tag instanceof AbstractID3v2Tag)
+            	  {
+            		  updated = updateLyricTag((AbstractID3v2Tag)tag, trimlyric, fdisp);
+            	  }
+
+         		  // Good chance that this wont be valid, Tag library only supports strings...
+
+         		  updated = updated | updateFieldTag(tag, FieldKey.IS_COMPILATION, ft.isCompilation(), fdisp);            	  
+            	  
+            	  // Will this work for FLACs? In theory it should, but the generic stuff didn't work for the LYRICS tag
+         		  updated = updated | updateFieldTag(tag, FieldKey.TITLE, ft.getTitle(), fdisp); 
+         		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM, ft.getAlbum(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.ARTIST, ft.getArtist(), fdisp);
+         		  
+         		  // I prefer to keep ALBUM_ARTIST and COMPOSER equal to ARTIST because some Apple apps
+         		  // choose the wrong field for display. 
+         		  
+         		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getAlbumartist(), ft.getArtist(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getComposer(), ft.getArtist(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.COMMENT, ft.getComment(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.YEAR, ft.getYear(), fdisp);
+         		  updated = updated | updateFieldTag(tag, FieldKey.GENRE, ft.getGenre(), fdisp);
+
+         		  updated = updated | updateCoverTag(tag, folderjpg, fdisp);
+         		  updated = updated | updateTracknumberTag(tag, ft.getTracknumber(), fdisp);
+         		  
+            	  if(updated)
+            	  {
+            		  log.info("Updating tag: " + fdisp);
+            		  af.commit();
+            	  }
+            	  else
+            	  {
+            		  log.info("No change to tag required"); 
+            	  }
               }
               else
               {
-                 log.severe("WARN: No or none-FLAC tag, unable to update: " + fdisp);
+                 log.severe("WARN: No metadata tag present in file, unable to update: " + fdisp);
               }
            }
            catch(Exception ex)
@@ -509,9 +584,250 @@ File lyfile = null;
            }				
         }
      }
-  }
+  } 
 	
 return 0;	
+}
+
+
+
+
+public static final String FOLDER_JPG = "folder.jpg"; 
+private Artwork getFolderJPG(File dir) 
+{
+	Artwork bjpg = null;
+	File fjpg = new File(dir, FOLDER_JPG);
+	
+	if(fjpg.isFile())
+	{
+		try 
+		{
+			Artwork tmpart = ArtworkFactory.createArtworkFromFile(fjpg);
+			bjpg = tmpart;
+		} 
+		catch (Exception e) 
+		{
+			// TODO Auto-generated catch block
+			log.severe("Exception reading " + fjpg + ": " + e.getMessage());
+		}
+	}
+	return bjpg;
+}
+
+private boolean isEmptyString(String s)
+{
+	return ((s==null) || (s.isEmpty()));
+}
+
+private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String defaultvalue, String fname)
+{
+	boolean updated = false;
+	
+	String updvalue = isEmptyString(newvalue) ? defaultvalue : newvalue;
+	if(isEmptyString(updvalue))
+		return updated;
+	
+	
+	String oldvalue = "<blank>";
+	if(tag.hasField(fld))
+	{
+		oldvalue = tag.getFirst(fld);
+		if(updvalue.equals(oldvalue))
+		{
+			log.fine("Value is unchanged for field '" + fld.name() + "', no update required: "+ fname);
+			return updated;
+		}
+		log.fine("Removing existing value for field '" + fld.name() + "':"   + fname);
+		tag.deleteField(fld);
+	}
+	TagField tagf;
+	try {
+		tagf = tag.createField(fld, updvalue);
+		tag.addField(tagf);
+		log.info("Updated '"  + fld.name() + "' to '" + updvalue + "' from '" + oldvalue + "'");
+		updated = true;
+	} 
+	catch (Exception e) 
+	{
+		log.log(Level.SEVERE, "Failed to add value '" + fld.name() + "' to: "+ fname, e);
+	} 
+	return updated;
+}
+
+private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String fname)
+{
+	return updateFieldTag(tag, fld, newvalue, null, fname);
+}
+
+private boolean updateFieldTag(Tag tag, FieldKey fld, Boolean newvalue, String fname)
+{
+	if(newvalue == null)
+		return false;
+
+	return updateFieldTag(tag, fld, newvalue ? "1" : "0", null, fname);
+}
+
+
+private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
+{
+	// Can't use the generic FieldKey.LYRICS because it is mapped to FLAC tag 'LYRICS' instead of 'UNSYNCED LYRICS'
+	// and I don't see a way to override this at the moment.	
+	
+	boolean updated = false;
+	if((newlyric==null) || (newlyric.isEmpty()))
+		return updated;
+	if(tag.hasField(FLAC_LYRICS_TAG))
+	{
+		  String currlyric = tag.getFirst(FLAC_LYRICS_TAG);
+		  if(newlyric.equals(currlyric))
+		  {
+			  log.fine("Lyric is unchanged, no update required: "+ fname);
+			  return updated;
+		  }
+		  log.fine("Removing existing lyric from "+ fname);
+		  tag.deleteField(FLAC_LYRICS_TAG);
+	}
+	
+	// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
+	//TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, newlyric);
+	//TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
+	try {
+
+		//TagField lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
+		TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
+		tag.addField(lyrictf);
+		log.info("Updated lyric in "+ fname);
+
+		updated = true;
+	} catch (FieldDataInvalidException e) {
+	
+		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
+	}
+	return updated;
+}
+
+private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp) 
+{
+	// At the moment I don't want to overwrite existing tracknumbers with ones from the XML
+	if(tag.hasField(FieldKey.TRACK))
+		return false;
+	boolean updated = false;
+	try
+	{
+		String fldval = tag.getFirst(FieldKey.TRACK);
+		int tagtrack = safeValueOf(fldval);
+		if((tagtrack != fmdtrack) && (fmdtrack>0))
+		{
+			fldval = String.format("%02d", fmdtrack); // TODO: make the padding configurable
+			tag.setField(FieldKey.TRACK, fldval);
+			log.info("Updated track number to '" + fldval +"'");
+			updated = true;
+		}
+	}
+	catch(Exception ex)
+	{
+		log.log(Level.SEVERE, "Failed to update track number to " + fmdtrack + ": " + fdisp, ex);
+	}
+	return updated;
+}
+
+private int safeValueOf(String s)
+{
+int i = 0;
+	try
+	{
+		i = Integer.valueOf(s);
+	}
+	catch(Exception ex)
+	{
+		log.log(Level.FINE, "Failed to parse to number: " + s, ex);
+	}
+	return i;
+}
+
+// Works for both MP3 and FLAC
+private boolean updateCoverTag(Tag tag, Artwork folderjpg, String fdisp) 
+{
+boolean updated = false;
+	
+	Artwork coverart = folderjpg;
+	if(coverart != null)
+	{
+		List<Artwork> covers = tag.getArtworkList();
+		if(covers.size() == 1)
+		{
+			byte[] newbytes = coverart.getBinaryData();
+			byte[] origbytes = covers.get(0).getBinaryData();
+			if(origbytes.length == newbytes.length)
+			{
+				if(Arrays.equals(origbytes, newbytes))
+				{
+					log.log(Level.FINE, "Cover art is unchanged, no update required: "+ fdisp);
+					return updated;
+				}
+			}
+		}
+		log.fine("Deleting all existing artwork from "+ fdisp);
+		tag.deleteArtworkField();
+
+		try 
+		{
+			tag.setField(coverart);
+			updated = true;
+			log.log(Level.INFO, "Cover art updated: "+ fdisp);
+		} 
+		catch (FieldDataInvalidException e) 
+		{
+			log.log(Level.SEVERE, "Failed to add cover art to: "+ fdisp, e);
+		}
+	}
+	
+	return updated; 
+}
+
+private boolean updateLyricTag(AbstractID3v2Tag tag, String newlyric, String fname)
+{
+boolean updated = false;
+	if((newlyric==null) || (newlyric.isEmpty()))
+		return updated;
+	if(tag.hasField(FieldKey.LYRICS))
+	{
+		  String currlyric = tag.getFirst(FieldKey.LYRICS);
+		  if(newlyric.equals(currlyric))
+		  {
+			  log.fine("Lyric is unchanged, no update required: "+ fname);
+			  return updated;
+		  }
+		  log.fine("Removing existing lyric from "+ fname);
+		  tag.deleteField(FieldKey.LYRICS);
+	}
+	TagField lyrictf;
+	try {
+		lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
+
+		if(lyrictf instanceof AbstractID3v2Frame)
+		{
+			setLyricLanguage((AbstractID3v2Frame) lyrictf);
+		}
+		tag.addField(lyrictf);
+		log.info("Updated lyric in "+ fname);
+		updated = true;
+	} 
+	catch (Exception e) 
+	{
+		log.log(Level.SEVERE, "Failed to add lyric to: "+ fname, e);
+	} 
+	
+
+	return updated;
+}
+
+// This is ugly but apparently a language is required by the tag library and the default value
+// is invalid. Not sure why the language is required. When MP3TAG displays the lyrics it
+// includes the language which is weird. Remains to be seen what is displayed in iTunes.
+private void setLyricLanguage(AbstractID3v2Frame lyrf)
+{
+	((FrameBodyUSLT) lyrf.getBody()).setLanguage("eng");
 }
 
 private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundException
@@ -520,21 +836,46 @@ private FlacTags loadLyrics(File lyricsxml) throws JAXBException, FileNotFoundEx
 	JAXBContext jc = JAXBContext.newInstance(ctxname);
 	Unmarshaller u = jc.createUnmarshaller(); 
 	AsciiFilterInputStream ascii = new AsciiFilterInputStream(new FileInputStream(lyricsxml));
+	FlacTags lyrics = null;
 	try
 	{
 		JAXBElement<FlacTags> o = u.unmarshal(new StreamSource(ascii), FlacTags.class);
-		FlacTags lyrics = o.getValue();
-		return lyrics;
+		lyrics = o.getValue();
+		
 	}
+	catch(UnmarshalException uex)
+	{
+		decodeUnmarshalException(uex, lyricsxml);
+	}	
    catch(JAXBException xex)
    {
       log.log(Level.SEVERE, "Exception processing " + lyricsxml, xex);
       throw xex;
    }
+
 	finally
 	{
 		Utils.safeClose(ascii);
 	}
+	return lyrics;
+}
+
+private void decodeUnmarshalException(UnmarshalException uex, File file) {
+	Throwable lex = uex.getLinkedException();
+	if(lex instanceof SAXParseException)
+	{
+		SAXParseException sex = (SAXParseException) lex;
+		// Would be nice to align Line under Parse but the console font is not fixed width
+		// alignment is done by tweaking tab size to match width of "SEVERE:" prefix
+
+		log.log(Level.SEVERE, "Parse fail: " + file.getName()+"\n\tLine " + sex.getLineNumber() + "(" + sex.getColumnNumber() + ") " + sex.getMessage());
+
+	}
+	else
+	{
+		log.log(Level.SEVERE, "Exception processing " + file, uex);
+	}
+
 	
 }
 
@@ -644,7 +985,7 @@ public void saveCuesheet(String lyricsxml, FlacTags tags) throws FileNotFoundExc
 public static final String FA_NAME="folderaudio";
 public static final String FA_EXTN=".md5";
 public static final String FA_FILENAME= FA_NAME + FA_EXTN;
-public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoundException
+public void saveFolderaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoundException
 {
    // flacaudio.md5 writing belongs somewhere else!!
    OutputStreamWriter osw = null;
@@ -654,6 +995,22 @@ public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoun
       for(Directory d : tags.getDirectory())
       {
 
+      	// Only write folderaudio if all entries have an MD5, either from streaminfo or calculated.
+      	boolean skipfamd5 = false;
+         for(FileMetadata fmd : d.getFiles().getFilemetadata())
+         {
+         	String md5trk = fmd.getStrmpcmmd5();
+         	if(md5trk == null)
+         		md5trk = fmd.getCalcpcmmd5();
+         	if(md5trk == null)
+         	{
+         		skipfamd5 = true;
+         		break;
+         	}
+         }
+         if(skipfamd5)
+         	continue;
+         
       	if(rootdir == null)
       	{
       		rootdir = new File(lyricsxml);
@@ -686,7 +1043,11 @@ public void saveFlacaudioMD5(String lyricsxml, FlacTags tags) throws FileNotFoun
       	StringBuffer md5s = new StringBuffer();
          for(FileMetadata fmd : d.getFiles().getFilemetadata())
          {
-            md5s.append(fmd.getStrmpcmmd5()).append(" *");
+         	// Use a calculated MD5 if there is no streaminfo value (always the case for MP3)
+         	String md5trk = fmd.getStrmpcmmd5();
+         	if(md5trk == null)
+         		md5trk = fmd.getCalcpcmmd5();
+            md5s.append(md5trk).append(" *");
             md5s.append(fmd.getName());
             md5s.append("\n");
          }
@@ -715,7 +1076,7 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 	JAXBContext jc = JAXBContext.newInstance(ctxname);	
 	FileOutputStream fos = null;
 	
-
+		sortTags(lyrics);
 		
 	   Marshaller m = jc.createMarshaller();
 	   m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
@@ -749,6 +1110,40 @@ private void saveLyrics(String lyricsxml, FlacTags lyrics) throws JAXBException,
 
 }
 
+
+// Sort the files in each directory according to the sort criteria.
+// Default is track order - this is the same as filename order for 
+// 'normal' albums, ie. with filenames like '<track> <title>', but not
+// for compilations, which do not include the track in the filename. 
+// Compilations consist of multiple albums merged together. Sorting on the
+// filename mixes the albums in the output file, sorting on the track 
+// number keeps the albums together in the output file which makes
+// looking for lyrics easier.
+// TODO: make sort order configurable, ie. allow the Comparator to be
+// defined externally.
+private void sortTags(FlacTags lyrics) {
+	
+	Comparator<FileMetadata> compareByTrack = 
+			(FileMetadata tag1, FileMetadata tag2) -> 
+	{
+		if((tag1 == null) || (tag1.getTracknumber() == null))
+			return -1;
+		if(tag2 == null)
+			return -1;
+
+		
+		return tag1.getTracknumber().compareTo( tag2.getTracknumber());
+   };
+   
+   Comparator<FileMetadata> tagsorter = compareByTrack;
+	for(Directory dir : lyrics.getDirectory())
+	{
+		List<FileMetadata> tags = dir.getFiles().getFilemetadata();
+		tags.sort(tagsorter);
+	}
+	
+}
+
 private String getFileDispName(File f)
 {
 	return (new File(f.getParent()).getName()) + File.separatorChar + f.getName();
@@ -756,8 +1151,11 @@ private String getFileDispName(File f)
 
 public String getAudioDigest(File flacfile, FileMetadata ftx)
 {
-	
-	FLACdigester fd = new FLACdigester();
+	AudioDigester fd = AudioDigesterFactory.getAudioDigester(flacfile);
+
+	if(fd == null)
+		return null; 
+	//AudioDigester fd = new FLACdigester();
 	String dig = null;
 	try
 	{

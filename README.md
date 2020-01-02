@@ -27,5 +27,4 @@ FLACtagger relies on;
 When I set up the FLACtagger GitHub project I was asked about the license to be applied. I can't find this
 information anywhere, and can't find licenses for the dependencies either.
 
-BTW: This is a text file, not a message digest, so why does it need to have the ".md" extension?
-Curse: GitHub lets me edit this file - and then it does't let me save the changes (aaaggghhh!!!!)
+
