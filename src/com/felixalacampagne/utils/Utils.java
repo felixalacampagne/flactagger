@@ -1,6 +1,7 @@
 package com.felixalacampagne.utils;
 
 import java.io.Closeable;
+import java.io.File;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -97,6 +98,11 @@ public class Utils
          // Ignore exceptions
       }
       return i;
+   }
+
+   public static String getFileDispName(File f)
+   {
+   	return (f==null) ? "<null>" : f.getParentFile().getName() + File.separator + f.getName();
    }
 
 }

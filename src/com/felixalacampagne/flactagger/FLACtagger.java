@@ -262,7 +262,7 @@ private String getValueOrNull(String val)
 public FileMetadata getFileMetadata(File f)
 {
 	FileMetadata ftx = null;
-	log.info("Loading: " + getFileDispName(f));
+	log.info("Loading: " + Utils.getFileDispName(f));
 	try 
 	{
 		AudioFile af = AudioFileIO.read(f);
@@ -341,17 +341,11 @@ public FileMetadata getFileMetadata(File f)
 	} 
 	catch (Exception e) 
 	{
-		log.severe("Failed to read TAG data from " + getNameWithParent(f) + ": " + e.getMessage());
+		log.severe("Failed to read TAG data from " + Utils.getFileDispName(f) + ": " + e.getMessage());
 	} 
 	
 	getAudioDigest(f, ftx);
 	return ftx;
-}
-
-// TODO Put this in Utils!
-private String getNameWithParent(File f)
-{
-	return f.getParentFile().getName() + File.separator + f.getName();
 }
 
 public List<File> getFiles(File dir)
@@ -532,16 +526,14 @@ File rootdirf = new File(rootDir);
               }
            }
 			
-           String fdisp = getFileDispName(f);
+           String fdisp = Utils.getFileDispName(f);
            log.info("Loading: " + fdisp);
            try
            {
               AudioFile af = AudioFileIO.read(f);
               boolean updated = false;
               Tag tag = af.getTag();
-              // Looks like it might be possible to support import/update of MP3 lyric tags from here.
-              // Currently I have a whole bunch of mp3 lyric XML files generated from mp3tag using the
-              // flactags schema... ID3v23
+
               if(tag != null)
               {
             	  if(tag instanceof FlacTag )
@@ -553,18 +545,13 @@ File rootdirf = new File(rootDir);
             		  updated = updateLyricTag((AbstractID3v2Tag)tag, trimlyric, fdisp);
             	  }
 
-         		  // Good chance that this wont be valid, Tag library only supports strings...
-
          		  updated = updated | updateFieldTag(tag, FieldKey.IS_COMPILATION, ft.isCompilation(), fdisp);            	  
-            	  
-            	  // Will this work for FLACs? In theory it should, but the generic stuff didn't work for the LYRICS tag
          		  updated = updated | updateFieldTag(tag, FieldKey.TITLE, ft.getTitle(), fdisp); 
          		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM, ft.getAlbum(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.ARTIST, ft.getArtist(), fdisp);
          		  
          		  // I prefer to keep ALBUM_ARTIST and COMPOSER equal to ARTIST because some Apple apps
          		  // choose the wrong field for display. 
-         		  
          		  updated = updated | updateFieldTag(tag, FieldKey.ALBUM_ARTIST, ft.getAlbumartist(), ft.getArtist(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getComposer(), ft.getArtist(), fdisp);
          		  updated = updated | updateFieldTag(tag, FieldKey.COMMENT, ft.getComment(), fdisp);
@@ -1160,11 +1147,6 @@ private void sortTags(FlacTags lyrics) {
 		tags.sort(tagsorter);
 	}
 	
-}
-
-private String getFileDispName(File f)
-{
-	return (new File(f.getParent()).getName()) + File.separatorChar + f.getName();
 }
 
 public String getAudioDigest(File flacfile, FileMetadata ftx)
