@@ -5,6 +5,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
 
 public class Utils
 {
@@ -100,9 +101,37 @@ public class Utils
       return i;
    }
 
-   public static String getFileDispName(File f)
-   {
-   	return (f==null) ? "<null>" : f.getParentFile().getName() + File.separator + f.getName();
-   }
+  
+	public static String safeString(String s)
+	{
+		return (s==null) ? "" : s;
+	}
+
+	/**
+	 * Return null for a null or empty string. 
+	 * 
+	 * Used to avoid writing an empty tag
+	 * 
+	 * @param val
+	 * @return
+	 */
+	public static String getValueOrNull(String val)
+	{
+		return ((val == null) || (val.isEmpty())) ? null : val; 
+	}
+
+	public static int safeValueOf(String s)
+	{
+	int i = 0;
+		try
+		{
+			i = Integer.valueOf(s);
+		}
+		catch(Exception ex)
+		{
+			// Ignore exceptions
+		}
+		return i;
+	}
 
 }
