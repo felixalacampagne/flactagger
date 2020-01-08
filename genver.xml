@@ -22,7 +22,7 @@ private static String VERSION = "${buildtime}";
 </echo>
 </target>
 	
-   <target name="dummyautobuild" depends="genbuildinfo">
+   <target name="dummyautobuild">
       <!-- Dummy target because it appears Eclipse is constantly performing builds
            including after a git commit which causes the updated flags to 
            show, even though nothing has been changed. 
