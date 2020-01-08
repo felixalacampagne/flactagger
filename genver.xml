@@ -12,19 +12,20 @@ package com.felixalacampagne.flactagger.gui;
 
 public class BuildInfo
 {
-public static final String VERSION = "${buildtime}";
-private BuildInfo() {}
+private static String VERSION = "${buildtime}";
+	public BuildInfo() {}
+	public String getVersion()
+	{
+		return VERSION;
+	}
 }
 </echo>
 </target>
 
-	<target name="autobuild">
+	<target name="autobuild" depends="genbuildinfo">
 		<!-- Dummy target because it appears Eclipse is constantly performing builds
 		     including after a git commit which causes the updated flags to 
 		     show, even though nothing has been changed. 
-		     Add 
-		        depends="genbuildinfo"
-		     to target to actually recreate the buildinfo everytime eclipse does an autobuild
 		  -->
 		<echo>autobuild target invoked</echo>
 	</target>

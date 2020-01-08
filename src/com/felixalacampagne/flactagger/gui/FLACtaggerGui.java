@@ -286,7 +286,7 @@ private void init()
   UpdatingTxtFieldListener txtfldupd = new UpdatingTxtFieldListener( this::setExtUpd );
 
   
-  mainframe = new JFrame("FLACtagger " + BuildInfo.VERSION);
+  mainframe = new JFrame("FLACtagger " + (new BuildInfo()).getVersion());
   mainframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
   mainframe.addWindowListener(exitEvent);
   mainframe.getContentPane().setPreferredSize(new Dimension(450, 400));
