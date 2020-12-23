@@ -669,7 +669,7 @@ private boolean updateFieldTag(Tag tag, FieldKey fld, Boolean newvalue, String f
 private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 {
 	// Can't use the generic FieldKey.LYRICS because it is mapped to FLAC tag 'LYRICS' instead of 'UNSYNCED LYRICS'
-	// and I don't see a way to override this at the moment.	
+	// and I don't see a way to override this.	
 	
 	boolean updated = false;
 	if((newlyric==null) || (newlyric.isEmpty() || FLACtaggerUtils.EMPTY_LYRIC.equals(newlyric)))
@@ -686,9 +686,6 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 		  tag.deleteField(FLAC_LYRICS_TAG);
 	}
 	
-	// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-	//TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, newlyric);
-	//TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
 	try {
 
 		//TagField lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
@@ -706,10 +703,6 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 
 private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp) 
 {
-	// Now I do! (No idea why this was disabled before)
-//	// At the moment I don't want to overwrite existing tracknumbers with ones from the XML
-//	if(tag.hasField(FieldKey.TRACK))
-//		return false;
 	boolean updated = false;
 	try
 	{
@@ -717,9 +710,9 @@ private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp)
 		
 		// I want the track nos. to be minimum 2 digit zero padded so need to compare
 		// the string values of the track no., assuming we have a valid no. in the fmd.
-		// Would also like to get rid of the x/y formatted track nos. and with a bit of luck
+		// Would also like to get rid of the t/d formatted track nos. and with a bit of luck
 		// this should cause them to be replaced even if the track no. itself is the same
-		// as the fmd no. Previously the /y was just ignored so no update was done as the
+		// as the fmd no. Previously the /d was just ignored so no update was done as the
 		// integer nos. were the same.
 		if(fmdtrack>0)
 		{
@@ -731,14 +724,6 @@ private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp)
 				updated = true;				
 			}
 		}
-//		int tagtrack = Utils.safeValueOf(fldval);
-//		if((tagtrack != fmdtrack) && (fmdtrack>0))
-//		{
-//			fldval = String.format("%02d", fmdtrack);
-//			tag.setField(FieldKey.TRACK, fldval);
-//			log.info("Updated track number to '" + fldval +"'");
-//			updated = true;
-//		}
 	}
 	catch(Exception ex)
 	{
