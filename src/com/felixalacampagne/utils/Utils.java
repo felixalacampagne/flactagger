@@ -117,9 +117,17 @@ public class Utils
 	 */
 	public static String getValueOrNull(String val)
 	{
-		return ((val == null) || (val.isEmpty())) ? null : val; 
+		return getValueOrDefault(val, null); //  ((val == null) || (val.isEmpty())) ? null : val; 
 	}
 
+	// Returns defvalue if val is null or empty, otherwise returns val.
+	// defvalue can be null
+	public static String getValueOrDefault(String val, String defvalue)
+	{
+		return ((val == null) || (val.isEmpty())) ? defvalue : val; 
+	}
+
+	
 	public static int safeValueOf(String s)
 	{
 	int i = 0;
