@@ -87,7 +87,7 @@ public class JMP3digester extends AbstractAudioDigester {
 		}
 		catch(Exception ex)
 		{
-			log.info("Cannot create digest", ex);
+			log.info("Cannot create digest: " + ex);
 			return null;
 		}
 		

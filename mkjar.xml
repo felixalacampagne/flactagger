@@ -25,7 +25,6 @@
                <attribute name="Class-Path" value="."/>
            </manifest>
            <fileset dir="${dir.jarfile}/bin"/>
-           <fileset dir="${dir.jarfile}/lib/bin"/>
        </jar>
    </target>
 	
