@@ -6,8 +6,10 @@
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
         <listEntry value="1"/>
     </listAttribute>
+    <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.m2e.launchconfig.classpathProvider"/>
     <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.felixalacampagne.flactagger.FLACtagger"/>
     <stringAttribute key="org.eclipse.jdt.launching.MODULE_NAME" value="FLACtagger"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-u -l &quot;E:\tmp\lyrics_clean.xml&quot; -r &quot;E:\tmp\ZZ toupdate&quot;"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="FLACtagger"/>
+    <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
 </launchConfiguration>

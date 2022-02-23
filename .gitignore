@@ -1,11 +1,11 @@
 /bin/
-/jaudiotagger-2.2.6-SNAPSHOT-sources/
+/jaudiotagger*
 *.zip
 *.jar
 *_zip.txt
-/src/com/felixalacampagne/flactagger/generated/
+**/src/com/felixalacampagne/flactagger/generated/
 *.bak
-/JustFLAC-master/
+/JustFLAC*/*
 /lib/
 /FLACtagger.lnk
 /dummy.txt

@@ -1,11 +1,9 @@
 package com.felixalacampagne.utils;
 
 import java.io.Closeable;
-import java.io.File;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.Level;
 
 public class Utils
 {

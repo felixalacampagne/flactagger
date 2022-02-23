@@ -1,130 +1,62 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    
-    <!-- 
-    maven file to download the project dependencies to the 'lib' sub-directory at the pom's location.
-    
-    Must be run with following arguments:
-    
-    mvn dependency:copy-dependencies -DoutputDirectory=OUTPUT_DIR
-    
-    Don't know why the DoutputDirectory arg is required since it is given in the pom.xml
-    
-     -->
-    
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.felixalacampagne</groupId>
-    <artifactId>flactagger.depends</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <properties>
-        <jaxb.version>3.0.2</jaxb.version>
-    </properties>
-    <dependencies>
-    
-    
-      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-xjc
--->
-      <dependency>
-          <groupId>org.glassfish.jaxb</groupId>
-          <artifactId>jaxb-xjc</artifactId>
-          <version>${jaxb.version}</version>
-      </dependency>
-
-      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-core
--->
-      <dependency>
-          <groupId>org.glassfish.jaxb</groupId>
-          <artifactId>jaxb-core</artifactId>
-          <version>${jaxb.version}</version>
-      </dependency>
-
-      <!--
-https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
-      <dependency>
-          <groupId>org.glassfish.jaxb</groupId>
-          <artifactId>jaxb-runtime</artifactId>
-          <version>${jaxb.version}</version>
-      </dependency>
-
-      <!--
-https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
-      <dependency>
-          <groupId>jakarta.xml.bind</groupId>
-          <artifactId>jakarta.xml.bind-api</artifactId>
-          <version>3.0.1</version>
-      </dependency>
-
-      <!--
-https://mvnrepository.com/artifact/com.sun.activation/jakarta.activation -->
-      <dependency>
-          <groupId>com.sun.activation</groupId>
-          <artifactId>jakarta.activation</artifactId>
-          <version>2.0.1</version>
-      </dependency>
-
-      <dependency>
-        <groupId>net.java.dev.jna</groupId>
-        <artifactId>jna</artifactId>
-        <version>5.10.0</version>
-      </dependency>
-
-      <dependency>
-        <groupId>net.java.dev.jna</groupId>
-        <artifactId>platform</artifactId>
-        <version>3.5.2</version>
-      </dependency>
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>com.felixalacampagne</groupId>
+   <artifactId>FLACtagger</artifactId>
+   <!-- 
+        <version>${recivaportal.app.version}</version>
         
-    </dependencies>
-    <build>
-        <sourceDirectory>src</sourceDirectory>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <id>default-cli</id>
-                        <configuration>
-                           <overWriteIfNewer>true</overWriteIfNewer>
-                           <outputDirectory>./lib</outputDirectory>
-                           <excludeTransitive>true</excludeTransitive>
-                           <!-- Don't know what this is for or whether it is required. It is not given as a valid
-                                option in the reference: https://maven.apache.org/plugins/maven-dependency-plugin/copy-dependencies-mojo.html
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>any.groupid</groupId>
-                                    <artifactId>depends</artifactId>
-                                    <version>0.0.1-SNAPSHOT</version>
-                                    <type>jar</type>
-                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            -->
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- This might package the project files and all dependencies into a single 'runnable' jar 
-                  apparently must be run with the following args:
-                  
-                  mvn package assembly:single
-            -->
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
+        In yet another attack of the modern tool developers living in a parallel universe the maven geniuses
+        have decreed that the annoyance of the absurd requirement to be specifiedrequirement everywhere
+        shall be exacerbated by prevent use of a variable to propgate the same version into all the
+        idiotic places it is required.
+        
+        Instead each time the version is changed ALL of the dependent files must also be changed and then
+        re-added to the source control system.
+        There solution to the issue they created:
+        mvn versions:set -DnewVersion=0.0.2-SNAPSHOT
+    -->
+   <version>0.0.1-SNAPSHOT</version>
+   <packaging>pom</packaging>
+   <name>FLACtagger</name>
+
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <!-- JRE version must be specified in a plugin block now, see below -->
+      <maven.compiler.source>1.8</maven.compiler.source>
+      <maven.compiler.target>1.8</maven.compiler.target>
+      <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
+      <maven.javadoc.skip>true</maven.javadoc.skip>
+      
+   </properties>
+
+   <modules>
+      <module>jaudiotagger</module>
+      <module>JustFLAC</module>
+      <module>flactagger-lib</module>
+   </modules>
+
+   
+ 
+ 
+   <!-- All this to tell it to use Java 11  -->
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.0</version>
             <configuration>
-              <archive>
-                <manifest>
-                  <mainClass>com.thanga.MyTest[REPLACE WITH YOUR MAIN
-CLASS]</mainClass>
-                </manifest>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
+                <!-- More modern tool lunacy. Must use 'source' and 'target' or Java 1.0 is the default 
+                (or something just as out of date) and Java 8 syntax gives build errors even though a Java 8 JDK
+                is being used. To ensure complete lack of consistency 'release' must be used to 
+                compile with Java 11 (even though there are no Java 11 language features used in my code! -->
+               <source>1.8</source>
+               <target>1.8</target>            
+               <!-- release>11</release -->
             </configuration>
-          </plugin>            
-            
-        </plugins>
-    </build>
+         </plugin>
+ 
+      </plugins>
+   </build>
 </project>
