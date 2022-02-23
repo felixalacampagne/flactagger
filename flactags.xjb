@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <jxb:bindings xmlns:xs="http://www.w3.org/2001/XMLSchema"
-              xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
-              jxb:version="1.0">
+              xmlns:jxb="https://jakarta.ee/xml/ns/jaxb"
+              jxb:version="3.0">
 
 <jxb:bindings schemaLocation="flactags.xsd">
 <jxb:schemaBindings>

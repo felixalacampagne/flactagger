@@ -20,9 +20,17 @@ FLACtagger relies on;
 - the "jaudiotagger" library which can be found here: https://bitbucket.org/ijabz/jaudiotagger.git
 - the "JustFLAC" library which can be found here: https://github.com/drogatkin/JustFLAC.git
 - the "jNA" library found here: https://github.com/java-native-access/jna
-  To keep FLACtagger a standalone (aka executable) jar the jna.jar and jna-platform.jar archives 
-  should be unzipped to the lib/bin directory. The content of lib/bin is then added to the FLACtagger 
-  archive. This does not appear to affect the dynamic creation/loading of the JNI DLL used by JNA.
+- since we are going back to the future it now relies on JAXB which has become an external dependency
+  
+  To keep FLACtagger a standalone (aka executable) jar the dependent libraries are included in the FLACtagger
+  jar file when it is built using the any script 'mkjar.xml'. 
+  
+  The dependent libraries can be downloaded with maven and the 'pom.xml' and specifying 
+  'dependency:copy-dependencies' as the goal. I haven't found a way to use maven to get the jar files
+  for the FLAC and audiotagger libraries so the sources are included in the project as git sub-modules.
+  This is not ideal as git sub-modules suck. Eventually I guess the project will need to be converted to
+  maven where these libraries can exist as sub-projects in parallel to the FLAGtagger project... or something...
+  but that is for another day.
 
 When I set up the FLACtagger GitHub project I was asked about the license to be applied. I can't find this
 information anywhere, and can't find licenses for the dependencies either.

@@ -37,7 +37,7 @@ private static String VERSION = "${buildtime}";
    <target name="clean">
       <echo>clean target invoked</echo>
    </target>
-   <target name="post-clean">
+   <target name="post-clean" depends="genbuildinfo">
       <echo>post-clean target invoked</echo>
    </target>
 </project>
