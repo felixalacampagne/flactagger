@@ -1,6 +1,6 @@
 
 <project default="genbuildinfo" name="Generate Buildinfo source file">
-<property name="buildinfo" value="src/com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
+<property name="buildinfo" value="src/main/com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
 <target name="genbuildinfo">
 	<echo>genbuildinfo target invoked</echo>
     <tstamp>

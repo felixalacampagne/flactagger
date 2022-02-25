@@ -3,9 +3,9 @@
 *.jar
 *_zip.txt
 *.bak
-/JustFLAC*/*
 /lib/
 /dummy.txt
 .metadata
 *.lnk
 /target/
+/src/generated

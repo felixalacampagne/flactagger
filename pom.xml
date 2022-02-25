@@ -101,30 +101,42 @@
    </dependencies>
 
    <build>
-      <sourceDirectory>src</sourceDirectory>
+      <sourceDirectory>${basedir}/src/main</sourceDirectory>
       <plugins>
       
          <!-- generate source from xsd.
-              The xsd must be located in 'src/main/xsd'
               NB. jaxb2-maven-plugin does not generate the required 'jakarta' flavour of JXB
           -->
          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>jaxb2-maven-plugin</artifactId>
-            <version>2.5.0</version>
-            <executions>
-                <execution>
-                    <id>xsd-to-java</id>
-                    <goals>
-                        <goal>xjc</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <packageName>com.felixalacampagne.flactagger.generated.flactags</packageName>
-            </configuration>
-        </plugin>
-      
+             <groupId>org.apache.cxf</groupId>
+             <artifactId>cxf-xjc-plugin</artifactId>
+             <version>3.3.0</version>
+             <executions>
+                 <execution>
+                     <id>xjc</id>
+                     <phase>generate-sources</phase>
+                     <goals>
+                         <goal>xsdtojava</goal>
+                     </goals>
+                     <configuration>
+                     
+                     <!-- This sets the output directory for the generated code. Only
+                          problem is maven then doesn't know how to find the source.
+                          
+                          Instead must use the default horribly long path and then configure eclipse to use
+                          it as a source directory
+                       -->
+                     <sourceRoot>${basedir}/src/generated</sourceRoot>
+                         <xsdOptions>
+                             <xsdOption>
+                                 <xsd>${basedir}/src/main/com/felixalacampagne/flactagger/flactags.xsd</xsd>
+                                 <packagename>com.felixalacampagne.flactagger.generated.flactags</packagename>
+                             </xsdOption>
+                         </xsdOptions>
+                     </configuration>
+                 </execution>
+             </executions>                    
+         </plugin>   
          <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.10.0</version>
