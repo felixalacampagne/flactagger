@@ -6,7 +6,7 @@
    <property name="lyrics.bindings" value="${basedir}/lyrics.xjb" />
    <property name="flactags.schema"   value="${basedir}/flactags.xsd" />
    <property name="flactags.bindings" value="${basedir}/flactags.xjb" />
-   <property name="jaxbdir" value="${basedir}/jaxb" />
+   <property name="jaxbdir" value="${basedir}/lib" />
 
 
 <!-- Appears there is no "official" ant task for doing "xjc". There was an ant task included in the old jaxws-jaxb library 

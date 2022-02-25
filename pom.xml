@@ -15,7 +15,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.felixalacampagne</groupId>
    <artifactId>FLACtagger</artifactId>
-   <version>0.0.1-SNAPSHOT</version>
+   <version>1.0.1-RELEASE</version>
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- JRE version must be specified in a plugin block now, see below -->
@@ -29,71 +29,77 @@
    </properties>
    
    <dependencies>
+   
+      <!-- https://github.com/drogatkin/JustFLAC.git -->
       <dependency>
          <groupId>drogatkin</groupId>
          <artifactId>JustFLAC</artifactId>
          <version>0.0.1-SNAPSHOT</version>
       </dependency>
 
+      <!-- https://search.maven.org/artifact/net.jthink/jaudiotagger/3.0.1/jar -->
       <dependency>
-         <groupId>net.jthink</groupId>
-         <artifactId>jaudiotagger</artifactId>
-         <version>2.2.6-SNAPSHOT</version>
+        <groupId>net.jthink</groupId>
+        <artifactId>jaudiotagger</artifactId>
+        <version>3.0.1</version>
       </dependency>
+      
 
-      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-xjc
-      -->
-      <dependency>
-         <groupId>org.glassfish.jaxb</groupId>
-         <artifactId>jaxb-xjc</artifactId>
-         <version>${jaxb.version}</version>
-      </dependency>
-
-      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-core
-      -->
-      <dependency>
-         <groupId>org.glassfish.jaxb</groupId>
-         <artifactId>jaxb-core</artifactId>
-         <version>${jaxb.version}</version>
-      </dependency>
-
-      <!--
-      https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
-      <dependency>
-         <groupId>org.glassfish.jaxb</groupId>
-         <artifactId>jaxb-runtime</artifactId>
-         <version>${jaxb.version}</version>
-      </dependency>
-
-      <!--
-      https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
-      <dependency>
-         <groupId>jakarta.xml.bind</groupId>
-         <artifactId>jakarta.xml.bind-api</artifactId>
-         <version>3.0.1</version>
-      </dependency>
-
-      <!--
-      https://mvnrepository.com/artifact/com.sun.activation/jakarta.activation -->
-      <dependency>
-         <groupId>com.sun.activation</groupId>
-         <artifactId>jakarta.activation</artifactId>
-         <version>2.0.1</version>
-      </dependency>
-
+      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna/5.10.0/jar -->
       <dependency>
          <groupId>net.java.dev.jna</groupId>
          <artifactId>jna</artifactId>
          <version>5.10.0</version>
       </dependency>
 
+      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna-platform/5.10.0/jar -->
       <dependency>
          <groupId>net.java.dev.jna</groupId>
          <artifactId>platform</artifactId>
          <version>3.5.2</version>
       </dependency>
+      
+      <!-- Dependencies required for using JAXB with java 11.
+           Note that the same dependencies are now used with Java 8 since the package names
+           of the JAXB components have been changed so the in-built version in Java8 cannot
+           be used. 
+       -->
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-xjc -->
+      <dependency>
+         <groupId>org.glassfish.jaxb</groupId>
+         <artifactId>jaxb-xjc</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
 
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-core -->
+      <dependency>
+         <groupId>org.glassfish.jaxb</groupId>
+         <artifactId>jaxb-core</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
+      <dependency>
+         <groupId>org.glassfish.jaxb</groupId>
+         <artifactId>jaxb-runtime</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
+      <dependency>
+         <groupId>jakarta.xml.bind</groupId>
+         <artifactId>jakarta.xml.bind-api</artifactId>
+         <version>3.0.1</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.sun.activation/jakarta.activation -->
+      <dependency>
+         <groupId>com.sun.activation</groupId>
+         <artifactId>jakarta.activation</artifactId>
+         <version>2.0.1</version>
+      </dependency>
    </dependencies>
+
    <build>
       <sourceDirectory>src</sourceDirectory>
       <plugins>
@@ -105,7 +111,17 @@
                <target>1.8</target>
             </configuration>
          </plugin>
+         
          <!-- plugin>
+            This was used in the pre-full maven version to download the libraries required
+            to execute XJC to generate code from the XSD. Ideally this code generation should
+            be done as part of the maven build however I have no idea how to get XJC to work
+            now that the dependencies are hidden away somewhere by maven and then how to get
+            maven to do a generate source operation before performing the compilation.
+            
+            So for now sources generated by the pre-full maven build have been added to git - they
+            rarely change anyway.
+            
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <version>3.2.0</version>
@@ -121,7 +137,15 @@
                </execution>
             </executions>
          </plugin -->
-         <!-- This generate a jar containing FLACtagger plus all of the dependencies extracted into it.
+         
+         
+         <!-- This generates the final deliverable: an 'executable' a jar called FLACtagger containing 
+              FLACtagger plus all of the dependencies extracted into it in the root of the project.
+              
+              It causes some typically weird nonsensical maven messages to be output during the build
+              about replacing a file with one name by a file with a completely different name - the result 
+              seems to be what is required, ie. an executable jar called FLACtagger.jar in the project root,
+              so they can be ignored.
           -->
          <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
@@ -150,7 +174,7 @@
                  After more hours of googling I found a way to set the file name - nothing whatsoever in the reference
                  for the plugin of course but 'finalName' and 'appendAssemblyId' do the trick. Don't know
                  how to specify the parent project directory - by default the jar is built in the target directory
-                 of the sub-project, so ../../ puts it where I want it.
+                 of the sub-project, so ../ puts it where I want it.
             -->
             <executions>
                <execution>
