@@ -1,17 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-   <!--
-   maven file to download the project dependencies to the 'lib' sub-directory at the pom's location.
-
-   Must be run with following arguments:
-
-   mvn dependency:copy-dependencies -DoutputDirectory=OUTPUT_DIR
-
-   Don't know why the DoutputDirectory arg is required since it is given in the pom.xml
-
-   -->
-
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.felixalacampagne</groupId>
    <artifactId>FLACtagger</artifactId>
@@ -23,9 +12,9 @@
       <maven.compiler.target>1.8</maven.compiler.target>
       <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
       <maven.javadoc.skip>true</maven.javadoc.skip>
-      
-         
       <jaxb.version>3.0.2</jaxb.version>
+      <maven.build.timestamp.format>yy.MM.dd.HHmm</maven.build.timestamp.format>
+      <timestamp>${build.localtime}</timestamp>
    </properties>
    
    <dependencies>
@@ -103,7 +92,53 @@
    <build>
       <sourceDirectory>${basedir}/src/main</sourceDirectory>
       <plugins>
-      
+         <!-- Forking hell these maven aholes sure know how to fork around. The build timestamp is hardcoded
+              to be GMT, with no way to get it to be the local time, like everyone else in the world wants it
+              to be. Supposedly throwing yet more magic shirt at it will fix it. But for cyring out loud why the
+              fork dont they try actually using this shirt themselves for a change.....
+              Even the suggested workaround sucks as there isn't a way to say just use the local time,
+              instead a timezone must be provided which defeats the whole point of using the workaround!!!
+         -->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>1.10</version>
+            <executions>
+                <execution>
+                    <id>timestamp-property</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>timestamp-property</goal>
+                    </goals>
+                    <configuration>
+                        <name>build.localtime</name>
+                        <pattern>yy.MM.dd.HHmm</pattern>
+                        <locale>en_US</locale>
+                        <timeZone>Europe/Brussels</timeZone>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin> 
+               
+         <!-- Process sources in src/java-templates - used to create the BuildInfo.java file containing a version -->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>templating-maven-plugin</artifactId>
+            <version>1.0.0</version>
+            <executions>
+                <execution>
+                    <id>filtering-java-templates</id>
+                    <goals>
+                        <goal>filter-sources</goal>
+                    </goals>
+                    <configuration>
+                    <sourceDirectory>${basedir}/src/java-templates</sourceDirectory>
+                     <outputDirectory>${basedir}/src/generated</outputDirectory>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>  
+           
          <!-- generate source from xsd.
               NB. jaxb2-maven-plugin does not generate the required 'jakarta' flavour of JXB
           -->
@@ -120,12 +155,7 @@
                      </goals>
                      <configuration>
                      
-                     <!-- This sets the output directory for the generated code. Only
-                          problem is maven then doesn't know how to find the source.
-                          
-                          Instead must use the default horribly long path and then configure eclipse to use
-                          it as a source directory
-                       -->
+                     <!-- This sets the output directory for the generated code. -->
                      <sourceRoot>${basedir}/src/generated</sourceRoot>
                          <xsdOptions>
                              <xsdOption>
@@ -145,32 +175,6 @@
                <target>1.8</target>
             </configuration>
          </plugin>
-         
-         <!-- plugin>
-            This was used in the pre-full maven version to download the libraries required
-            to execute XJC to generate code from the XSD. Ideally this code generation should
-            be done as part of the maven build however I have no idea how to get XJC to work
-            now that the dependencies are hidden away somewhere by maven and then how to get
-            maven to do a generate source operation before performing the compilation.
-            
-            So for now sources generated by the pre-full maven build have been added to git - they
-            rarely change anyway.
-            
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <version>3.2.0</version>
-            <executions>
-               <execution>
-                  <id>default-cli</id>
-                  <configuration>
-                     <overWriteIfNewer>true</overWriteIfNewer>
-                     <outputDirectory>./lib</outputDirectory>
-                     <excludeTransitive>true</excludeTransitive>
-
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin -->
          
          
          <!-- This generates the final deliverable: an 'executable' a jar called FLACtagger containing 
