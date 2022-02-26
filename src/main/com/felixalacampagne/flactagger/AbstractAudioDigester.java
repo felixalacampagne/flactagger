@@ -3,11 +3,12 @@ package com.felixalacampagne.flactagger;
 import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
+import java.util.logging.Logger;
 
-import com.sun.istack.internal.logging.Logger;
+
 
 public abstract class AbstractAudioDigester implements AudioDigester {
-	protected final Logger log = Logger.getLogger(this.getClass());
+	protected final Logger log = Logger.getLogger(this.getClass().getName());
 	protected String streaminfoMD5 = null;
 	protected String calculatedMD5 = null;
 	protected MessageDigest md = null;

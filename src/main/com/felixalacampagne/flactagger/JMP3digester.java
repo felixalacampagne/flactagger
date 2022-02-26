@@ -8,9 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
 
-import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -87,7 +85,7 @@ public class JMP3digester extends AbstractAudioDigester {
 		}
 		catch(Exception ex)
 		{
-			log.info("Cannot create digest", ex);
+			log.info("Cannot create digest: " + ex);
 			return null;
 		}
 		

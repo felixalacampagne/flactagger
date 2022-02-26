@@ -1,0 +1,230 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>com.felixalacampagne</groupId>
+   <artifactId>FLACtagger</artifactId>
+   <version>1.0.1-RELEASE</version>
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <!-- JRE version must be specified in a plugin block now, see below -->
+      <maven.compiler.source>1.8</maven.compiler.source>
+      <maven.compiler.target>1.8</maven.compiler.target>
+      <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
+      <maven.javadoc.skip>true</maven.javadoc.skip>
+      <jaxb.version>3.0.2</jaxb.version>
+      <maven.build.timestamp.format>yy.MM.dd.HHmm</maven.build.timestamp.format>
+      <timestamp>${build.localtime}</timestamp>
+   </properties>
+   
+   <dependencies>
+   
+      <!-- https://github.com/drogatkin/JustFLAC.git -->
+      <dependency>
+         <groupId>drogatkin</groupId>
+         <artifactId>JustFLAC</artifactId>
+         <version>0.0.1-SNAPSHOT</version>
+      </dependency>
+
+      <!-- https://search.maven.org/artifact/net.jthink/jaudiotagger/3.0.1/jar -->
+      <dependency>
+        <groupId>net.jthink</groupId>
+        <artifactId>jaudiotagger</artifactId>
+        <version>3.0.1</version>
+      </dependency>
+      
+
+      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna/5.10.0/jar -->
+      <dependency>
+         <groupId>net.java.dev.jna</groupId>
+         <artifactId>jna</artifactId>
+         <version>5.10.0</version>
+      </dependency>
+
+      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna-platform/5.10.0/jar -->
+      <dependency>
+         <groupId>net.java.dev.jna</groupId>
+         <artifactId>platform</artifactId>
+         <version>3.5.2</version>
+      </dependency>
+      
+      <!-- Dependencies required for using JAXB with java 11.
+           Note that the same dependencies are now used with Java 8 since the package names
+           of the JAXB components have been changed so the in-built version in Java8 cannot
+           be used. 
+       -->
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-xjc -->
+      <dependency>
+         <groupId>org.glassfish.jaxb</groupId>
+         <artifactId>jaxb-xjc</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-core -->
+      <dependency>
+         <groupId>org.glassfish.jaxb</groupId>
+         <artifactId>jaxb-core</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
+      <dependency>
+         <groupId>org.glassfish.jaxb</groupId>
+         <artifactId>jaxb-runtime</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
+      <dependency>
+         <groupId>jakarta.xml.bind</groupId>
+         <artifactId>jakarta.xml.bind-api</artifactId>
+         <version>3.0.1</version>
+      </dependency>
+
+      <!-- https://mvnrepository.com/artifact/com.sun.activation/jakarta.activation -->
+      <dependency>
+         <groupId>com.sun.activation</groupId>
+         <artifactId>jakarta.activation</artifactId>
+         <version>2.0.1</version>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <sourceDirectory>${basedir}/src/main</sourceDirectory>
+      <plugins>
+         <!-- Forking hell these maven aholes sure know how to fork around. The build timestamp is hardcoded
+              to be GMT, with no way to get it to be the local time, like everyone else in the world wants it
+              to be. Supposedly throwing yet more magic shirt at it will fix it. But for cyring out loud why the
+              fork dont they try actually using this shirt themselves for a change.....
+              Even the suggested workaround sucks as there isn't a way to say just use the local time,
+              instead a timezone must be provided which defeats the whole point of using the workaround!!!
+         -->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.3.0</version>
+            <executions>
+                <execution>
+                    <id>timestamp-property</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>timestamp-property</goal>
+                    </goals>
+                    <configuration>
+                        <name>build.localtime</name>
+                        <pattern>yy.MM.dd.HHmm</pattern>
+                        <locale>en_US</locale>
+                        <timeZone>Europe/Brussels</timeZone>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin> 
+               
+         <!-- Process sources in src/java-templates - used to create the BuildInfo.java file containing a version -->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>templating-maven-plugin</artifactId>
+            <version>1.0.0</version>
+            <executions>
+                <execution>
+                    <id>filtering-java-templates</id>
+                    <goals>
+                        <goal>filter-sources</goal>
+                    </goals>
+                    <configuration>
+                    <sourceDirectory>${basedir}/src/java-templates</sourceDirectory>
+                     <outputDirectory>${basedir}/src/generated</outputDirectory>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>  
+           
+         <!-- generate source from xsd.
+              NB. jaxb2-maven-plugin does not generate the required 'jakarta' flavour of JXB
+          -->
+         <plugin>
+             <groupId>org.apache.cxf</groupId>
+             <artifactId>cxf-xjc-plugin</artifactId>
+             <version>3.3.0</version>
+             <executions>
+                 <execution>
+                     <id>xjc</id>
+                     <phase>generate-sources</phase>
+                     <goals>
+                         <goal>xsdtojava</goal>
+                     </goals>
+                     <configuration>
+                     
+                     <!-- This sets the output directory for the generated code. -->
+                     <sourceRoot>${basedir}/src/generated</sourceRoot>
+                         <xsdOptions>
+                             <xsdOption>
+                                 <xsd>${basedir}/src/main/com/felixalacampagne/flactagger/flactags.xsd</xsd>
+                                 <packagename>com.felixalacampagne.flactagger.generated.flactags</packagename>
+                             </xsdOption>
+                         </xsdOptions>
+                     </configuration>
+                 </execution>
+             </executions>                    
+         </plugin>   
+         <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.10.0</version>
+            <configuration>
+               <source>1.8</source>
+               <target>1.8</target>
+            </configuration>
+         </plugin>
+         
+         
+         <!-- This generates the final deliverable: an 'executable' a jar called FLACtagger containing 
+              FLACtagger plus all of the dependencies extracted into it in the root of the project.
+              
+              It causes some typically weird nonsensical maven messages to be output during the build
+              about replacing a file with one name by a file with a completely different name - the result 
+              seems to be what is required, ie. an executable jar called FLACtagger.jar in the project root,
+              so they can be ignored.
+          -->
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+               <archive>
+                  <manifest>
+                     <mainClass>com.felixalacampagne.flactagger.gui.FLACtaggerGui</mainClass>
+                  </manifest>
+               </archive>
+               <finalName>../FLACtagger</finalName>
+               <appendAssemblyId>false</appendAssemblyId>
+               <descriptorRefs>
+                  <descriptorRef>jar-with-dependencies</descriptorRef>
+               </descriptorRefs>
+            </configuration>
+            <!-- This magic means 'package' can be used as the mvn command instead of needing to add 'assembly:single' 
+                 By a fortuitous quirk of fate it also means that the combined jar is built as part of the 
+                 normal 'clean install' build of the parent project. I'd only spent hours and hours trying to figure
+                 out how to do that without finding any clue anywhere, and needless to say the page where I found
+                 the magic also makes no hint whatsoever that this is what adding the magic will actually achieve,
+                 gotta love these forking modern tools and the incomprehensible jibberish their creators use
+                 to describe them!
+                 
+                 Just need to have the name changed to something more friendly and it would be just about complete!
+                 
+                 After more hours of googling I found a way to set the file name - nothing whatsoever in the reference
+                 for the plugin of course but 'finalName' and 'appendAssemblyId' do the trick. Don't know
+                 how to specify the parent project directory - by default the jar is built in the target directory
+                 of the sub-project, so ../ puts it where I want it.
+            -->
+            <executions>
+               <execution>
+                  <id>make-assembly</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+      </plugins>
+   </build>
+</project>

@@ -16,12 +16,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.UnmarshalException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import org.jaudiotagger.audio.AudioFile;
@@ -45,13 +39,23 @@ import com.felixalacampagne.flactagger.generated.flactags.FlacTags;
 import com.felixalacampagne.flactagger.generated.flactags.ObjectFactory;
 import com.felixalacampagne.utils.CmdArgMgr;
 import com.felixalacampagne.utils.Utils;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.UnmarshalException;
+import jakarta.xml.bind.Unmarshaller;
+
 import static com.felixalacampagne.utils.Utils.getValueOrNull;
+import static com.felixalacampagne.utils.Utils.getValueOrDefault;
 
 public class FLACtagger
 {
 private static final String USAGE="Usage: FLACtagger <-u|-x> <-l lyrics.xml> [-r FLAC file rootdir]";
 private static final String FLAC_LYRICS_TAG="UNSYNCED LYRICS";
 private static final Logger log = Logger.getLogger(FLACtagger.class.getName());
+
 
 // Need to keep a reference to the JAT logger to avoid it being garbage collected before
 // any real JAT loggers are created, which I think is what causes the INFO level
@@ -286,7 +290,7 @@ public FileMetadata getFileMetadata(File f)
 		ftx.setComposer(getValueOrNull(tag.getFirst(FieldKey.COMPOSER)));
 		ftx.setComment(getValueOrNull(tag.getFirst(FieldKey.COMMENT)));
 		ftx.setYear(getValueOrNull(tag.getFirst(FieldKey.YEAR))); // TODO: Use a (normal) Integer
-		ftx.setGenre(getValueOrNull(tag.getFirst(FieldKey.GENRE)));
+		ftx.setGenre(getValueOrDefault(tag.getFirst(FieldKey.GENRE), "Pop"));
 		
 		// Not sure whether the tag library supports the compilation flag
 		String s = tag.getFirst(FieldKey.IS_COMPILATION);
@@ -314,6 +318,9 @@ public FileMetadata getFileMetadata(File f)
 			lyric = lyric.replace("\u2019", "'"); // right single quote, frequently used for he'd, I'd, aint', etc..
 			lyric = lyric.replace("\u201D", "'"); // right double quote
 			lyric = lyric.replace("\u201C", "'"); // left double quote
+			lyric = lyric.replace("&quot;", "'");
+			lyric = lyric.replace("&amp;", "and");
+			
 			lyric = lyric.replace("&", "and");
 			lyric = lyric.replace(">", "");
 			lyric = lyric.replace("<", "");
@@ -602,11 +609,12 @@ String trimlyric = ftu.fmtLyricForTag(ft.getLyric());
 	updated = updated | updateFieldTag(tag, FieldKey.COMPOSER, ft.getComposer(), ft.getArtist(), fdisp);
 	updated = updated | updateFieldTag(tag, FieldKey.COMMENT, ft.getComment(), fdisp);
 	updated = updated | updateFieldTag(tag, FieldKey.YEAR, ft.getYear(), fdisp);
-	updated = updated | updateFieldTag(tag, FieldKey.GENRE, ft.getGenre(), fdisp);
+	updated = updated | updateFieldTag(tag, FieldKey.GENRE, ft.getGenre(), "Pop", fdisp);
 
 	updated = updated | updateCoverTag(tag, folderjpg, fdisp);
 	updated = updated | updateTracknumberTag(tag, ft.getTracknumber(), fdisp);
-
+	updated = updated | updateFieldTag(tag, FieldKey.DISC_NO, "1", fdisp);
+	
 	return updated;
 }
 
@@ -620,7 +628,7 @@ private boolean updateFieldTag(Tag tag, FieldKey fld, String newvalue, String de
 		return updated;
 	
 	
-	String oldvalue = "<blank>";
+	String oldvalue = FLACtaggerUtils.EMPTY_LYRIC;
 	if(tag.hasField(fld))
 	{
 		oldvalue = tag.getFirst(fld);
@@ -663,10 +671,10 @@ private boolean updateFieldTag(Tag tag, FieldKey fld, Boolean newvalue, String f
 private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 {
 	// Can't use the generic FieldKey.LYRICS because it is mapped to FLAC tag 'LYRICS' instead of 'UNSYNCED LYRICS'
-	// and I don't see a way to override this at the moment.	
+	// and I don't see a way to override this.	
 	
 	boolean updated = false;
-	if((newlyric==null) || (newlyric.isEmpty()))
+	if((newlyric==null) || (newlyric.isEmpty() || FLACtaggerUtils.EMPTY_LYRIC.equals(newlyric)))
 		return updated;
 	if(tag.hasField(FLAC_LYRICS_TAG))
 	{
@@ -680,9 +688,6 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 		  tag.deleteField(FLAC_LYRICS_TAG);
 	}
 	
-	// TagField ID: UNSYNCED LYRICS Class: org.jaudiotagger.tag.vorbiscomment.VorbisCommentTagField
-	//TagField lyrictf = new VorbisCommentTagField(FLAC_LYRICS_TAG, newlyric);
-	//TagField lyrictf = tag.createField(FLAC_LYRICS_TAG, newlyric);
 	try {
 
 		//TagField lyrictf = tag.createField(FieldKey.LYRICS, newlyric);
@@ -700,20 +705,26 @@ private boolean updateLyricTag(FlacTag tag, String newlyric, String fname)
 
 private boolean updateTracknumberTag(Tag tag, Integer fmdtrack, String fdisp) 
 {
-	// At the moment I don't want to overwrite existing tracknumbers with ones from the XML
-	if(tag.hasField(FieldKey.TRACK))
-		return false;
 	boolean updated = false;
 	try
 	{
 		String fldval = tag.getFirst(FieldKey.TRACK);
-		int tagtrack = Utils.safeValueOf(fldval);
-		if((tagtrack != fmdtrack) && (fmdtrack>0))
+		
+		// I want the track nos. to be minimum 2 digit zero padded so need to compare
+		// the string values of the track no., assuming we have a valid no. in the fmd.
+		// Would also like to get rid of the t/d formatted track nos. and with a bit of luck
+		// this should cause them to be replaced even if the track no. itself is the same
+		// as the fmd no. Previously the /d was just ignored so no update was done as the
+		// integer nos. were the same.
+		if(fmdtrack>0)
 		{
-			fldval = String.format("%02d", fmdtrack);
-			tag.setField(FieldKey.TRACK, fldval);
-			log.info("Updated track number to '" + fldval +"'");
-			updated = true;
+			String fmdfldval = String.format("%02d", fmdtrack);
+			if(!fmdfldval.equals(fldval))
+			{
+				tag.setField(FieldKey.TRACK, fmdfldval);
+				log.info("Updated track number to '" + fmdfldval +"'");
+				updated = true;				
+			}
 		}
 	}
 	catch(Exception ex)

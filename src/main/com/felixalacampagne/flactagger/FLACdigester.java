@@ -12,7 +12,7 @@ import org.kc7bfi.jflac.metadata.StreamInfo;
 import org.kc7bfi.jflac.util.ByteData;
 
 import com.felixalacampagne.utils.Utils;
-import com.sun.istack.internal.logging.Logger;
+
 
 // Requires the "JustFLAC" library
 public class FLACdigester extends AbstractAudioDigester implements PCMProcessor

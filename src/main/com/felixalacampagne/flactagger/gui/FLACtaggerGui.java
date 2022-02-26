@@ -38,8 +38,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -520,7 +518,7 @@ File pfile = new File(System.getProperty("user.home"), PROP_FILE);
 	{
 
 		e.printStackTrace();
-	}
+	} 
 }
 
 // Need to keep the reference to the jat logger on which the level is set
@@ -573,12 +571,23 @@ boolean bFileMD5 = false;
 	 @Override
 	 public Integer doInBackground() 
 	 {
-			FLACtagger taggr = new FLACtagger(rootDir);
+       Logger log = Logger.getLogger("");
+       CaptureLogHandler cl = new CaptureLogHandler(this);
+       log.addHandler(cl);
+       
+	    FLACtagger taggr = null;
+	    try
+	    {
+	       taggr = new FLACtagger(rootDir);
+	    }
+	    catch(Error e)
+	    {
+	       log.log(Level.SEVERE, "Exception creating FLACtagger - could this be Java 11 or higher???.", e);
+	       return 1;
+	    }
 
 			
-			CaptureLogHandler cl = new CaptureLogHandler(this);
-			Logger log = Logger.getLogger("");
-			log.addHandler(cl);
+
 			
 			System.out.println("doInBackground: starting no-sleep");
 			KeepOnTruckin.startTruckin();			

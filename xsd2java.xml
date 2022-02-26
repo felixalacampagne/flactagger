@@ -6,19 +6,36 @@
    <property name="lyrics.bindings" value="${basedir}/lyrics.xjb" />
    <property name="flactags.schema"   value="${basedir}/flactags.xsd" />
    <property name="flactags.bindings" value="${basedir}/flactags.xjb" />
+   <property name="jaxbdir" value="${basedir}/lib" />
+
 
 <!-- Appears there is no "official" ant task for doing "xjc". There was an ant task included in the old jaxws-jaxb library 
      which was used before JAXB became part of standard Java. Unfortunately the tools part of jaxb was not included.
      The XJCFacade class is in the tools.jar of the JDK. It's not documented but appears to require the same parameters
-     as the xjc.exe
+     as the xjc.exe.
+     
+     Thanks to continuous improvement we are now back in the previous millenium with JAXB no longer part of the
+     standard Java. So by some means it is necessary to find the XJC jar file and download it (and all it's dependencies)
+     into a 'jaxb' directory. All the JAR files in the jaxb directory are then added to the classpath used
+     for the 'xjc' macro. The arguments appear to be the same as before.
  -->
+   <path id="libs.jaxb">
+      <fileset dir="${jaxbdir}">
+         <include name="**/*.jar" />
+      </fileset>
+   </path>	
 <!-- lyrics.xsd -b lyrics.xjb -d src -->
+	<!--
+	Java 11 way:
+	java -cp .\jaxb\jakarta.activation-api-2.1.0.jar;.\jaxb\jakarta.xml.bind-api-3.0.1.jar;.\jaxb\javax.activation-api-1.2.0.jar;.\jaxb\jaxb-xjc-3.0.2.jar;.\jaxb\jaxb-impl-3.0.2.jar;.\jaxb\jaxb-core-3.0.2.jar com.sun.tools.xjc.XJCFacade flactags.xsd -b flactags.xjb -d ./src
+	-->
 <macrodef name="xjc">
    <attribute name="schema" default=""/>
    <attribute name="xjb"    default=""/>
    <attribute name="dest"    default=""/>
 	<sequential>
-   <java classname="com.sun.tools.internal.xjc.XJCFacade">
+   <java classname="com.sun.tools.xjc.XJCFacade">
+   	<classpath refid="libs.jaxb" />
       <arg value="@{schema}" />
       <arg value="-b" />
       <arg value="@{xjb}" />

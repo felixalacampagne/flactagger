@@ -1,34 +1,35 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="upd_n_jar" name="Create Runnable Jar for Project FLACtagger">
-	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
-   <!--ANT 1.7 is required                                        -->
-   <!--define folder properties-->
-   <property name="dir.buildfile" value="."/>
-   <property name="dir.workspace" value="${dir.buildfile}/.."/>
-   <property name="dir.jarfile" value="${dir.buildfile}"/>
-	
-	<property name="src.dir" value="${dir.buildfile}/src" />
-	<property name="build.dir" value="${dir.buildfile}/bin" />
-   
-	<import file="${dir.buildfile}/genver.xml"/>
-	
-	 <target name="upd_version" depends="genbuildinfo">
-	 	<javac srcdir="${src.dir}" destdir="${build.dir}" includeantruntime="false">
-	 	    <include name="com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
-	 	</javac>	 	
-	</target>
-	
-   <target name="create_run_jar">
-       <jar destfile="${dir.jarfile}/FLACtagger.jar" filesetmanifest="mergewithoutmain">
-           <manifest>
-               <attribute name="Main-Class" value="com.felixalacampagne.flactagger.gui.FLACtaggerGui"/>
-               <attribute name="Class-Path" value="."/>
-           </manifest>
-           <fileset dir="${dir.jarfile}/bin"/>
-           <fileset dir="${dir.jarfile}/lib/bin"/>
-       </jar>
-   </target>
-	
-	<target name="upd_n_jar" depends="upd_version,create_run_jar" />
-	
+<project default="create_run_jar" name="Create Runnable Jar for Project flactagger-lib">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <!--define folder properties-->
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="${dir.buildfile}/.."/>
+    <property name="dir.jarfile" value="${dir.buildfile}"/>
+    <target name="create_run_jar">
+        <jar destfile="${dir.jarfile}/FLACtagger.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="com.felixalacampagne.flactagger.gui.FLACtaggerGui"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="${dir.jarfile}/flactagger-lib/target/classes"/>
+            <fileset dir="${dir.jarfile}/JustFLAC/target/classes"/>
+            <fileset dir="${dir.jarfile}/jaudiotagger/target/classes"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/org/glassfish/jaxb/jaxb-xjc/3.0.2/jaxb-xjc-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/org/glassfish/jaxb/xsom/3.0.2/xsom-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/com/sun/xml/bind/external/relaxng-datatype/3.0.2/relaxng-datatype-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/org/glassfish/jaxb/codemodel/3.0.2/codemodel-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/com/sun/xml/bind/external/rngom/3.0.2/rngom-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/com/sun/xml/dtd-parser/dtd-parser/1.4.5/dtd-parser-1.4.5.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/com/sun/istack/istack-commons-tools/4.0.1/istack-commons-tools-4.0.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/org/glassfish/jaxb/jaxb-core/3.0.2/jaxb-core-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/org/glassfish/jaxb/txw2/3.0.2/txw2-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/com/sun/istack/istack-commons-runtime/4.0.1/istack-commons-runtime-4.0.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/org/glassfish/jaxb/jaxb-runtime/3.0.2/jaxb-runtime-3.0.2.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/jakarta/xml/bind/jakarta.xml.bind-api/3.0.1/jakarta.xml.bind-api-3.0.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/com/sun/activation/jakarta.activation/2.0.1/jakarta.activation-2.0.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/net/java/dev/jna/jna/5.10.0/jna-5.10.0.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.workspace}/maven/repository/net/java/dev/jna/platform/3.5.2/platform-3.5.2.jar"/>
+        </jar>
+    </target>
 </project>

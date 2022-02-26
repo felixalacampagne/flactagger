@@ -1,6 +1,6 @@
 
 <project default="genbuildinfo" name="Generate Buildinfo source file">
-<property name="buildinfo" value="src/com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
+<property name="buildinfo" value="src/main/com/felixalacampagne/flactagger/gui/BuildInfo.java"/>
 <target name="genbuildinfo">
 	<echo>genbuildinfo target invoked</echo>
     <tstamp>
@@ -37,7 +37,7 @@ private static String VERSION = "${buildtime}";
    <target name="clean">
       <echo>clean target invoked</echo>
    </target>
-   <target name="post-clean">
+   <target name="post-clean" depends="genbuildinfo">
       <echo>post-clean target invoked</echo>
    </target>
 </project>
