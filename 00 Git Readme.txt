@@ -44,8 +44,9 @@ Changes have been made on local repos and pushed to the NAS repo and now the cha
   
   So do the suggested action - does this have to be done for every new branch! WTF!
   At least this suggestion turns out to be more helpful than the others and finally GitHub appears to have been
-  updated with changes in the NAS repo.
-  Unforkingbelievable. 
+  updated with changes in the NAS repo. Unforkingbelievable. 
+- For subsequent pushes of the same branch, at least for today, 'git push' appears to behave as expected. At least it
+  did when I tried to push the updates to this document made directly on the NAS working directory.
 
 
   this is what
