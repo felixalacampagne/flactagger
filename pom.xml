@@ -14,7 +14,7 @@
       <maven.javadoc.skip>true</maven.javadoc.skip>
       <jaxb.version>3.0.2</jaxb.version>
       <maven.build.timestamp.format>yy.MM.dd.HHmm</maven.build.timestamp.format>
-      <timestamp>${build.localtime}</timestamp>
+      <timestamp>${build.localtime}</timestamp> <!-- Variable created by build-helper-maven-plugin below -->
    </properties>
    
    <dependencies>
