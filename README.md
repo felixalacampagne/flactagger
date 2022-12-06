@@ -23,7 +23,7 @@ FLACtagger relies on;
 - since we are going back to the future it now relies on JAXB which has become an external dependency
   
   To keep FLACtagger a standalone (aka executable) jar the dependent libraries are included in the FLACtagger
-  jar file when it is built using the any script 'mkjar.xml'. 
+  jar file when it is built using the ant script 'mkjar.xml'. 
   
   The dependent libraries can be downloaded with maven and the 'pom.xml' and specifying 
   'dependency:copy-dependencies' as the goal. I haven't found a way to use maven to get the jar files
@@ -36,6 +36,14 @@ When I set up the FLACtagger GitHub project I was asked about the license to be 
 information anywhere, and can't find licenses for the dependencies either.
 
 History
+06-Dec-2022 Renamed default branch to 'main' for consistency with other projects. On local repos GH suggests 
+running the following commands:
+
+git branch -m master main
+git fetch origin
+git branch -u origin/main main
+git remote set-head origin -a
+
 21-Feb-2022 Hadn't had a reason to change FLACtagger for a few years then I tried to use it on
 my latest laptop and nothing. No errors and no response. Luckily this laptop had a development environment
 installed so I clone the FLACtagger repo and started to debug. Of course it didn't work, missing libraries
