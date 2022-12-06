@@ -70,7 +70,7 @@ new JAXB libraries. Luckily the XJC with the new JAXB libraries seems to keep th
 with the new package names. Waste more time changing package names in my code and now it compiles and hey, ho, 
 the resulting Jar appears to run with Java 11. It doesn't
 run with Java 8 due to bytecode version difference or some such shirt. Waste more time getting Java 11 compiler to
-output Java 8 compatible bytecode, or did I use Java 8 and the Java 11 JAXB libraries - don't recall.
+output Java 8 compatible bytecode.
 
 During the search for the new JAXB libs I realised that the external libraries I use were available via maven so I
 had the genius idea of converting the project to use maven and removing the git submodules for the external stuff,
