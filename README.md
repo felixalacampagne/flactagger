@@ -65,9 +65,10 @@ In comes the dreaded Maven - all Googling points to Maven, no installer for JAXB
 I did manage to concoct some maven magic to download the JAXB libraries to a local dir.
 This is when I discovered that the continuous improvers have been at it again and the
 JAXB pakage names have been randomly changed from the standard 'javax'. So now the code generated
-by XJC is wrong. More time wasted getting the XJC script to work with the new JAXB libraries. Luckily the new
-XJC seems to keep the same arguments and does generate code with the new package names. Waste more time changing
-package names in my code and now it compiles and hey, ho, the resulting Jar appears to run with Java 11. It doesn't
+by XJC included with Java 8 is wrong. More time wasted getting the XJC ant script to take XJC from and to use the 
+new JAXB libraries. Luckily the XJC with the new JAXB libraries seems to keep the same arguments and generates code 
+with the new package names. Waste more time changing package names in my code and now it compiles and hey, ho, 
+the resulting Jar appears to run with Java 11. It doesn't
 run with Java 8 due to bytecode version difference or some such shirt. Waste more time getting Java 11 compiler to
 output Java 8 compatible bytecode, or did I use Java 8 and the Java 11 JAXB libraries - don't recall.
 
@@ -84,7 +85,10 @@ worth of spare time to get working. But for now it does work. I even managed to 
 get it to build - although there was some difficulty getting the JAXB with the correct package names - don't really
 know what happened to make it work properly, but it coincided with problem getting git to update the files so
 they matched the repo content - why is it necessary to manually remove files that have been removed from the repo, 
-surely having that done automatically is the point of using git.
+surely having that done automatically is the point of using git. [Much later... tried to get project working on another 
+system and ran headlong into the JAXB package name problem again. I'm pretty sure it was fixed by forcing use of Java 11
+to run the maven build. Probably running maven with Java 8 results in the XJC which is part of Java 8 being picked
+up instead of the external version.]
 
 So one week later I was able to finally use my new (unchanged functionality) version of FLACtagger to tag some
 FLACs on a machine with Java11. Thank you, Java committee grassholes for gratuitously breaking my code and wasting my time.
