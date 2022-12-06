@@ -39,10 +39,10 @@ History
 06-Dec-2022 Renamed default branch to 'main' for consistency with other projects. On local repos GH suggests 
 running the following commands:
 
-git branch -m master main
-git fetch origin
-git branch -u origin/main main
-git remote set-head origin -a
+git branch -m master main  
+git fetch origin  
+git branch -u origin/main main  
+git remote set-head origin -a  
 
 21-Feb-2022 Hadn't had a reason to change FLACtagger for a few years then I tried to use it on
 my latest laptop and nothing. No errors and no response. Luckily this laptop had a development environment
