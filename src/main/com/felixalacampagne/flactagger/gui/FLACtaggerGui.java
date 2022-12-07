@@ -82,7 +82,7 @@ private JButton btnUpdate;
 private JTextPane logdisplay;
 
 private Properties settings = new Properties();
- 
+
 private ActionListener updateAction = new ActionListener(){
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -100,17 +100,17 @@ private ActionListener extractAction = new ActionListener(){
 };
 
 
-WindowAdapter exitEvent = new WindowAdapter() 
+WindowAdapter exitEvent = new WindowAdapter()
 {
    @Override
-   public void windowClosing(java.awt.event.WindowEvent windowEvent) 
+   public void windowClosing(java.awt.event.WindowEvent windowEvent)
    {
    	try
    	{
    	Point p = mainframe.getLocation();
-   	String loc = String.format("%d,%d", (int) p.getX(), (int)p.getY()); 
+   	String loc = String.format("%d,%d", (int) p.getX(), (int)p.getY());
    	settings.setProperty(PROP_LOCATION, loc);
-   	 
+
    	saveSettings();
    	}
    	catch(Exception ex) {} // We are exiting, ensure nothing gets in the way
@@ -130,7 +130,7 @@ public FLACtaggerGui()
 		// Ignore this - I copied it from somewhere and have no idea if it is valid or not
 	}
 	init();
-	
+
 }
 
 protected void popupBox(String msg, int status)
@@ -156,7 +156,7 @@ protected void setEnabled(boolean enable)
 	}
 	this.txtFlacTagsFile.setEnabled(enable);
 	this.txtRootDir.setEnabled(enable);
-	
+
 
 	// Should also disable the directory/file choosers.
 }
@@ -169,11 +169,12 @@ final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlac
 
 	task.setCalcMD5(isCalcMD5Enabled());
 	task.setFileMD5(isFileMD5Enabled());
-	
+
 	logdisplay.setText("");
 	task.addPropertyChangeListener(new PropertyChangeListener()
 	{
-			public void propertyChange(PropertyChangeEvent evt)
+			@Override
+         public void propertyChange(PropertyChangeEvent evt)
 			{
 				String prop = evt.getPropertyName();
 				Object obj = evt.getNewValue();
@@ -194,7 +195,7 @@ final TaggerTask task = new TaggerTask(action, logdisplay, getRootDir(), getFlac
 						break;
 					}
 				}
-			}			
+			}
 	});
 	task.execute();
 }
@@ -206,9 +207,9 @@ protected void setExtUpd()
 {
 String r= getRootDir();
 boolean b = false;
-	
+
    getFlactagFile(); // Clean the filename before testing
-   
+
 	//if((r != null) && (r.length()>0) && (t != null) && (t.length()>0))
 	// empty output file is now allowed, filename defaults to rootDir name in rootDir
 	if((r != null) && (r.length()>0))
@@ -234,7 +235,7 @@ Matcher mat = Pattern.compile("^\"(\\p{Alpha}:.*)\"$").matcher(p);
    if(mat.matches())
    {
       p = mat.group(1);
-   } 
+   }
    return p;
 }
 
@@ -283,47 +284,47 @@ private void init()
 
   UpdatingTxtFieldListener txtfldupd = new UpdatingTxtFieldListener( this::setExtUpd );
 
-  
-  mainframe = new JFrame("FLACtagger " + (new BuildInfo()).getVersion());
+
+  mainframe = new JFrame(BuildInfo.getAppTitle());
   mainframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
   mainframe.addWindowListener(exitEvent);
   mainframe.getContentPane().setPreferredSize(new Dimension(450, 400));
   mainframe.getContentPane().setLayout(new BoxLayout(mainframe.getContentPane(), BoxLayout.Y_AXIS));
-  
+
   mainframe.setResizable(false);
 
   // Root dir - where to find the directories
   //   Label, textbox to display value, button for dir chooser
   txtRootDir = new JTextField();
-  
+
   DirectorynameTransferHandler.addToComponent(txtRootDir);
 
   addCCPPopup(txtRootDir);
 
 
   txtRootDir.getDocument().addDocumentListener(txtfldupd);
-  
+
   JLabel lbl1 = new JLabel("Base directory:");
-  lbl1.setLabelFor(txtRootDir); 
+  lbl1.setLabelFor(txtRootDir);
   lbl1.setToolTipText("Directory containing the directories to scan for FLAC files. All sub-directories in the base directory will be scanned.");
   JButton btnRootDir = new JButton("...");
 
-  pnl = new JPanel(); 
+  pnl = new JPanel();
   bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
   pnl.setLayout(bl);
   pnl.add(lbl1);
-  
+
   pnl.add(txtRootDir);
   pnl.add(btnRootDir);
   mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-  
+
   btnRootDir.addActionListener(
      new ActionListener()
      {
     	 @Override
     	 public void actionPerformed(ActionEvent e)
     	 {
-    	 JFileChooser chooser = new JFileChooser(); 
+    	 JFileChooser chooser = new JFileChooser();
     	 String sf = getRootDir();
     	 	if((sf == null) || (sf.length() < 2))
     	 		sf = ".";
@@ -334,11 +335,11 @@ private void init()
     	 	chooser.setDialogTitle("Choose base directory");
     	 	chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     	 	chooser.setAcceptAllFileFilterUsed(false);
-    	 	
-    	 	if (chooser.showOpenDialog(mainframe) == JFileChooser.APPROVE_OPTION) 
-    	 	{ 
+
+    	 	if (chooser.showOpenDialog(mainframe) == JFileChooser.APPROVE_OPTION)
+    	 	{
     	 		File sel = chooser.getSelectedFile();
-    	 		
+
     	 		// Java too stupid to realise when a path is pasted into it, instead it
     	 		// appends the quoted text onto the current directory. Can't find a practical way to
     	 		// intercept the quotes so try crudely detect a quoted filename and assume its
@@ -359,44 +360,44 @@ private void init()
 				}
     	 		setRootDir(sel.getAbsolutePath());
 			}
-    	 	else 
+    	 	else
     	 	{
     	 		System.out.println("No Selection ");
     	 	}
     	 }
      });
-  
+
   // XML file - for output/input dpending on mode
   //   Label, textbox to display value, button for file chooser
   txtFlacTagsFile = new JTextField();
   addCCPPopup(txtFlacTagsFile);
   txtFlacTagsFile.getDocument().addDocumentListener(txtfldupd);
-  
+
   JLabel lbl2 = new JLabel("Flac tags file:");
   lbl2.setLabelFor(txtFlacTagsFile);
   lbl2.setToolTipText("<html>Extract:<ul><li>filename: for all tags<li>directory: individual tag files<li>empty: tags in flac directories</ul>" +
   "Update:<ul><li>filename: load tags from just this file<li>directory: load tags from all .xml files in directory</ul></html>");
   JButton btnTagFile = new JButton("...");
-  pnl = new JPanel(); 
+  pnl = new JPanel();
   bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
   pnl.setLayout(bl);
   pnl.add(lbl2);
 
   pnl.add(Box.createRigidArea(new Dimension(8, 0)));
-  
-  
+
+
   pnl.add(txtFlacTagsFile);
   pnl.add(btnTagFile);
   mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
 
-  
+
    btnTagFile.addActionListener(new ActionListener()
    {
       @Override
 	  public void actionPerformed(ActionEvent e)
 	  {
       String sf = getFlactagFile();
-      JFileChooser chooser = new JFileChooser(); 
+      JFileChooser chooser = new JFileChooser();
          chooser.setDialogTitle("Choose tag file");
       	 chooser.setAcceptAllFileFilterUsed(true);
       	 chooser.setApproveButtonText("Select");
@@ -409,29 +410,29 @@ private void init()
       	 {
       		chooser.setSelectedFile(new File(sf));
       	 }
-      	 if (chooser.showOpenDialog(mainframe) == JFileChooser.APPROVE_OPTION) 
-         { 
+      	 if (chooser.showOpenDialog(mainframe) == JFileChooser.APPROVE_OPTION)
+         {
       		File sel = chooser.getSelectedFile();
       		setFlactagFile(sel.getAbsolutePath());
       	 }
-      	 else 
+      	 else
       	 {
       		System.out.println("No Selection ");
          }
       }
    });
-  
+
 
    chkMD5 = new JCheckBox("Calculate MD5s");
    chkMD5.setHorizontalTextPosition(SwingConstants.TRAILING);
    chkMD5.setToolTipText("Calculate the audio only MD5 when extracting tags (slow)");
-   
+
    chkFileMD5 = new JCheckBox("Save SI MD5s");
    chkFileMD5.setHorizontalTextPosition(SwingConstants.TRAILING);
    chkFileMD5.setToolTipText("Save the FLAC StreamInfo embedded MD5s");
-   
+
    // Extract and update buttons
-   pnl = new JPanel(); 
+   pnl = new JPanel();
    bl = new BoxLayout(pnl,BoxLayout.X_AXIS);
    pnl.setLayout(bl);
    btnExtract = new JButton("Extract");
@@ -441,7 +442,7 @@ private void init()
    btnUpdate.setEnabled(false);
    btnUpdate.addActionListener(updateAction);
 
-   JPanel pnlchk = new JPanel(); 
+   JPanel pnlchk = new JPanel();
    bl = new BoxLayout(pnlchk,BoxLayout.Y_AXIS);
    pnlchk.setLayout(bl);
    pnlchk.add(chkFileMD5);
@@ -453,7 +454,7 @@ private void init()
    pnl.add(Box.createRigidArea(new Dimension(100, 0)));
    mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
 
-   pnl = new JPanel(); 
+   pnl = new JPanel();
    logdisplay = new JTextPane();
    logdisplay.setEditable(false);
    setTabs(logdisplay);
@@ -469,7 +470,7 @@ private void init()
    pnl.setLayout(new BorderLayout());
    pnl.add(scp, BorderLayout.CENTER);
    mainframe.getContentPane().add(pnl, BorderLayout.CENTER);
-  
+
    mainframe.pack();
    mainframe.setVisible(true);
    loadSettings();
@@ -494,7 +495,7 @@ private void saveSettings()
 		settings.setProperty(PROP_CALCMD5, isCalcMD5Enabled() ? "Y" : "N");
 		settings.setProperty(PROP_SAVEMD5, isFileMD5Enabled() ? "Y" : "N");
 		settings.store(new FileOutputStream(pfile), "FLACtagger Gui settings file");
-		
+
 	}
 	catch (Exception e)
 	{
@@ -518,12 +519,12 @@ File pfile = new File(System.getProperty("user.home"), PROP_FILE);
 	{
 
 		e.printStackTrace();
-	} 
+	}
 }
 
 // Need to keep the reference to the jat logger on which the level is set
 // to avoid it being garbage collected before jaudiotagger creates its own
-// loggers. I think this is why the output sometimes includes jaudiotagger 
+// loggers. I think this is why the output sometimes includes jaudiotagger
 // log messages and sometimes doesn't.
 static Logger mjaudiotaggerLogger = Logger.getLogger("org.jaudiotagger");
 public static void main(String[] args)
@@ -545,36 +546,36 @@ MutableAttributeSet successAttr = null;
 boolean bMD5 = false;
 boolean bFileMD5 = false;
 
-	 public TaggerTask(TaggerAction action, JTextPane logdisplay, String rootdir, String metadatafile) 
-	 { 
+	 public TaggerTask(TaggerAction action, JTextPane logdisplay, String rootdir, String metadatafile)
+	 {
 		 taggeraction = action;
 		 display = logdisplay;
 		 metadataFile = metadatafile;
 		 rootDir = rootdir;
-		 
+
 		// defaultAttr doesn't need to be Mutable (at the moment) but doing it like this for consistency.
-		 defaultAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes()); 
-		 
+		 defaultAttr = new SimpleAttributeSet(logdisplay.getCharacterAttributes());
+
 		 // Must force the default colour - if the display is scrolled to
 		 // display an error then the attribute returned here has a red colour, possibly if the display
 		 // is scrolled to the right to display the full line and the resulting display only has
 		 // red text in it.
 		 StyleConstants.setForeground(defaultAttr, Color.BLACK);
-		 
+
 		 errorAttr = new SimpleAttributeSet(defaultAttr);
 		 StyleConstants.setForeground(errorAttr, Color.RED);
-		 
+
 		 successAttr = new SimpleAttributeSet(defaultAttr);
 		 StyleConstants.setForeground(successAttr, Color.GREEN);
 	 }
 
 	 @Override
-	 public Integer doInBackground() 
+	 public Integer doInBackground()
 	 {
        Logger log = Logger.getLogger("");
        CaptureLogHandler cl = new CaptureLogHandler(this);
        log.addHandler(cl);
-       
+
 	    FLACtagger taggr = null;
 	    try
 	    {
@@ -586,15 +587,15 @@ boolean bFileMD5 = false;
 	       return 1;
 	    }
 
-			
 
-			
+
+
 			System.out.println("doInBackground: starting no-sleep");
-			KeepOnTruckin.startTruckin();			
+			KeepOnTruckin.startTruckin();
 			int rc = 0;
- 
+
 			logdisplay.setText("");
-			
+
 			try
 			{
 				taggr.setMd5Enabled(bMD5);
@@ -624,20 +625,20 @@ boolean bFileMD5 = false;
 				log.removeHandler(cl);
 				System.out.println("doInBackground: stopping no-sleep");
 				KeepOnTruckin.endOfTheRoad();
-				System.out.println("doInBackground: done");				
+				System.out.println("doInBackground: done");
 			}
 
 	 }
 	 @Override
-	 protected void process(List<String> chunks) 
+	 protected void process(List<String> chunks)
 	 {
-		 for (String s: chunks) 
+		 for (String s: chunks)
        {
 			 //logdisplay.append(s);
 		    AttributeSet attr = null;
 		    Document doc = logdisplay.getDocument();
-		  
-		  
+
+
 		    try
 		    {
 		   	 if(s.startsWith("INFO:") || s.startsWith("DEBUG:"))
@@ -650,7 +651,7 @@ boolean bFileMD5 = false;
 		   		 // will remain in effect - so the stracktrace lines are also displayed in red.
 		   		 // Unfortunately the red attribute sometimes stays in effect when it shouldn't
 		   		 // not really sure why this is since all the log messages start with one of the keywords
-		   		 
+
 		          attr = errorAttr;
 		       }
 		       else if(MSG_DONE.equals(s))
@@ -701,7 +702,7 @@ boolean bFileMD5 = false;
 // Thanks to https://stackoverflow.com/questions/30682416/java-right-click-copy-cut-paste-on-textfield
 // for the "inspiration" for this code!
 @SuppressWarnings("serial")
-public void addCCPPopup(JTextField txtField) 
+public void addCCPPopup(JTextField txtField)
 {
     JPopupMenu popup = new JPopupMenu();
     UndoManager undoManager = new UndoManager();
@@ -711,7 +712,7 @@ public void addCCPPopup(JTextField txtField)
     Action undoAction = new AbstractAction("Undo") {
         @Override
         public void actionPerformed(ActionEvent ae) {
-            if (undoManager.canUndo()) 
+            if (undoManager.canUndo())
             {
                 undoManager.undo();
             }
@@ -724,18 +725,18 @@ public void addCCPPopup(JTextField txtField)
     Action redoAction = new AbstractAction("Redo") {
        @Override
        public void actionPerformed(ActionEvent ae) {
-           if (undoManager.canRedo()) 
+           if (undoManager.canRedo())
            {
                undoManager.redo();
            }
-           else 
+           else
            {
               System.out.println("Redo: canRedo is false.");
            }
        }
    };
-    
-    
+
+
    Action copyAction = new AbstractAction("Copy") {
         @Override
         public void actionPerformed(ActionEvent ae) {
@@ -777,11 +778,11 @@ public void addCCPPopup(JTextField txtField)
     popup.addSeparator();
     popup.add (selectAllAction);
     popup.add (undoAction);
-   
+
     txtField.getInputMap().put(KeyStroke.getKeyStroke("control Z"), undoAction);
     txtField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), redoAction);
     txtField.setComponentPopupMenu(popup);
-    
+
 }
 
 private void setTabs(JTextPane pane)
@@ -797,7 +798,7 @@ private void setTabs(JTextPane pane)
    StyleContext sc = StyleContext.getDefaultStyleContext();
    AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY,
    StyleConstants.TabSet, tabset);
-   pane.setParagraphAttributes(aset, false);	
+   pane.setParagraphAttributes(aset, false);
 }
 
 // Inspiration from answers to https://stackoverflow.com/questions/24433089/jtextarea-settext-undomanager

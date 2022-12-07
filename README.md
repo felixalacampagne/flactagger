@@ -23,7 +23,7 @@ FLACtagger relies on;
 - since we are going back to the future it now relies on JAXB which has become an external dependency
   
   To keep FLACtagger a standalone (aka executable) jar the dependent libraries are included in the FLACtagger
-  jar file when it is built using the any script 'mkjar.xml'. 
+  jar file when it is built using the ant script 'mkjar.xml'. 
   
   The dependent libraries can be downloaded with maven and the 'pom.xml' and specifying 
   'dependency:copy-dependencies' as the goal. I haven't found a way to use maven to get the jar files
@@ -36,6 +36,14 @@ When I set up the FLACtagger GitHub project I was asked about the license to be 
 information anywhere, and can't find licenses for the dependencies either.
 
 History
+06-Dec-2022 Renamed default branch to 'main' for consistency with other projects. On local repos GH suggests 
+running the following commands:
+
+git branch -m master main  
+git fetch origin  
+git branch -u origin/main main  
+git remote set-head origin -a  
+
 21-Feb-2022 Hadn't had a reason to change FLACtagger for a few years then I tried to use it on
 my latest laptop and nothing. No errors and no response. Luckily this laptop had a development environment
 installed so I clone the FLACtagger repo and started to debug. Of course it didn't work, missing libraries
@@ -51,13 +59,16 @@ Eventually realise that the difference is Java8 in the IDE but the laptop has Ja
 what, why ClassNotFound??? More wasted time later - Google informs me that JAXB is no longer part of Java11. Yes,
 the geniuses in the Java committee have decided to continuously improve us all the way back to the last millenium
 when JAXB had to be downloaded separately from the standard JRE... WTAF? OK, can't beat them, there are too many
-them and I just my perfectly functioning program to work again. Where to get JAXB from now? In comes the dreaded
-Maven - all Googling points to Maven, no installer for JAXB or anything. I did manage to concoct some maven magic to
-download the JAXB libraries to a local dir. This is when I discovered that the continuous improvers have been at it
-again and the JAXB pakage names have been randomly changed from the standard 'javax'. So now the code generated
-by XJC is wrong. More time wasted getting the XJC script to work with the new JAXB libraries. Luckily the new
-XJC seems to keep the same arguments and does generate code with the new package names. Waste more time changing
-package names in my code and now it compiles and hey, ho, the resulting Jar appears to run with Java 11. It doesn't
+them and I just want my previously perfectly functioning program to work again. 
+Where to get JAXB from now? 
+In comes the dreaded Maven - all Googling points to Maven, no installer for JAXB or anything. 
+I did manage to concoct some maven magic to download the JAXB libraries to a local dir.
+This is when I discovered that the continuous improvers have been at it again and the
+JAXB pakage names have been randomly changed from the standard 'javax'. So now the code generated
+by XJC included with Java 8 is wrong. More time wasted getting the XJC ant script to take XJC from and to use the 
+new JAXB libraries. Luckily the XJC with the new JAXB libraries seems to keep the same arguments and generates code 
+with the new package names. Waste more time changing package names in my code and now it compiles and hey, ho, 
+the resulting Jar appears to run with Java 11. It doesn't
 run with Java 8 due to bytecode version difference or some such shirt. Waste more time getting Java 11 compiler to
 output Java 8 compatible bytecode, or did I use Java 8 and the Java 11 JAXB libraries - don't recall.
 
@@ -71,10 +82,13 @@ how to get the timestamp version file generated, using a sensible time, ie. the 
 system time, not some theoretical time which I couldn't give a shirt about, how to get the runnable jar file
 generated (actually this was one of the better experiences!!). All seemingly simple things, but all requiring days
 worth of spare time to get working. But for now it does work. I even managed to download onto a second system and
-get it to build - although there was some difficulty getting the JAXN with the correct package names - don't really
+get it to build - although there was some difficulty getting the JAXB with the correct package names - don't really
 know what happened to make it work properly, but it coincided with problem getting git to update the files so
 they matched the repo content - why is it necessary to manually remove files that have been removed from the repo, 
-surely having that done automatically is the point of using git.
+surely having that done automatically is the point of using git. [Much later... tried to get project working on another 
+system and ran headlong into the JAXB package name problem again. I'm pretty sure it was fixed by forcing use of Java 11
+to run the maven build. Probably running maven with Java 8 results in the XJC which is part of Java 8 being picked
+up instead of the external version.]
 
 So one week later I was able to finally use my new (unchanged functionality) version of FLACtagger to tag some
-FLACs on a machine with Java11. Thank Java committee grassholes for gratuitously breaking my code and wasting my time.
+FLACs on a machine with Java11. Thank you, Java committee grassholes for gratuitously breaking my code and wasting my time.
