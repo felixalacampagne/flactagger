@@ -4,7 +4,8 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.felixalacampagne</groupId>
    <artifactId>FLACtagger</artifactId>
-   <version>1.0.1-RELEASE</version>
+   <version>1.0.2-SNAPSHOT</version>
+   <name>FLACtagger</name>
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- JRE version must be specified in a plugin block now, see below -->
@@ -14,7 +15,6 @@
       <maven.javadoc.skip>true</maven.javadoc.skip>
       <jaxb.version>3.0.2</jaxb.version>
       <maven.build.timestamp.format>yy.MM.dd.HHmm</maven.build.timestamp.format>
-      <timestamp>${build.localtime}</timestamp>
    </properties>
    
    <dependencies>
@@ -111,8 +111,8 @@
                         <goal>timestamp-property</goal>
                     </goals>
                     <configuration>
-                        <name>build.localtime</name>
-                        <pattern>yy.MM.dd.HHmm</pattern>
+                        <name>localtime</name>
+                        <pattern>yyyy-MM-dd HH:mm</pattern>
                         <locale>en_US</locale>
                         <timeZone>Europe/Brussels</timeZone>
                     </configuration>
@@ -132,8 +132,9 @@
                         <goal>filter-sources</goal>
                     </goals>
                     <configuration>
-                    <sourceDirectory>${basedir}/src/java-templates</sourceDirectory>
-                     <outputDirectory>${basedir}/src/generated</outputDirectory>
+                     <!-- defaults to ${basedir}/src/main/java-templates -->
+                     <sourceDirectory>java-templates</sourceDirectory>
+                     <!-- outputDirectory>${project.build.directory}/generated-sources/java-templates</outputDirectory -->
                     </configuration>
                 </execution>
             </executions>

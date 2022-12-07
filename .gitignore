@@ -3,6 +3,7 @@
 *.jar
 *_zip.txt
 *.bak
+*.diff
 /lib/
 /dummy.txt
 .metadata
