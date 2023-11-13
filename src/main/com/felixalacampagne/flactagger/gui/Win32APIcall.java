@@ -14,6 +14,7 @@ public class Win32APIcall
 {
 private Object K32=null; // Kernel32
 private Method mthSetThreadExecutionState = null;
+private boolean bInitFailed = false;
 private int ES_SYSTEM_REQUIRED = 1;   // com.sun.jna.platform.win32.WinBase.ES_SYSTEM_REQUIRED
 public Win32APIcall()
 {
@@ -23,9 +24,10 @@ public Win32APIcall()
 public void initKernel32()
 {
 	
-	if(K32 != null)
+	if((K32 != null) || bInitFailed)
 		return;
 
+   bInitFailed = true;
 	try
 	{
 		Class<?> native_class = Class.forName("com.sun.jna.Native");
@@ -33,20 +35,26 @@ public void initKernel32()
 		Method load_method = native_class.getMethod("load", String.class, Class.class);
 		K32 = load_method.invoke(null, "kernel32", k32_class);
 		mthSetThreadExecutionState = k32_class.getMethod("SetThreadExecutionState", int.class);
+      bInitFailed = false;
 	}
 	catch(Error err)
 	{
 		err.printStackTrace();
 	}
+	catch(NoSuchMethodException nsmex)
+	{
+	   System.out.println("Win32APIcall.initKernel32: cannot access Win32 method: keep awake will not be possible");
+	}
 	catch(Exception ex)
 	{
+
 		ex.printStackTrace();
 	}
 }
 	
 public boolean systemIsBusy()
 {
-	if(K32 != null)
+	if(mthSetThreadExecutionState != null)
 	{
 		try
 		{
