@@ -4,13 +4,13 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.felixalacampagne</groupId>
    <artifactId>FLACtagger</artifactId>
-   <version>1.0.2-RELEASE</version>
+   <version>1.0.2.1-SNAPSHOT</version>
    <name>FLACtagger</name>
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <!-- JRE version must be specified in a plugin block now, see below -->
-      <maven.compiler.source>1.8</maven.compiler.source>
-      <maven.compiler.target>1.8</maven.compiler.target>
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
       <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
       <maven.javadoc.skip>true</maven.javadoc.skip>
       <jaxb.version>3.0.2</jaxb.version>
@@ -146,7 +146,7 @@
          <plugin>
              <groupId>org.apache.cxf</groupId>
              <artifactId>cxf-xjc-plugin</artifactId>
-             <version>3.3.0</version>
+             <version>3.3.1</version>
              <executions>
                  <execution>
                      <id>xjc</id>
@@ -172,8 +172,8 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.10.0</version>
             <configuration>
-               <source>1.8</source>
-               <target>1.8</target>
+               <source>11</source>
+               <target>11</target>
             </configuration>
          </plugin>
          
