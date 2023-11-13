@@ -59,6 +59,8 @@
            were satisfied. Unfortuanately when built on a system which did not have Java 11 generated
            code and which actually generated the sources under Java 8 the generated sources were using javax so the 
            jakarta references were unsatisfied.
+           
+           
        -->
       <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-xjc -->
       <dependency>
