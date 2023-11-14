@@ -34,19 +34,19 @@
       </dependency>
       
 
-      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna/5.10.0/jar -->
+      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna -->
       <dependency>
          <groupId>net.java.dev.jna</groupId>
          <artifactId>jna</artifactId>
-         <version>5.10.0</version>
+         <version>5.13.0</version>
       </dependency>
 
-      <!-- https://search.maven.org/artifact/net.java.dev.jna/jna-platform/5.10.0/jar -->
+      <!-- https://central.sonatype.com/artifact/net.java.dev.jna/jna-platform -->
       <dependency>
-         <groupId>net.java.dev.jna</groupId>
-         <artifactId>platform</artifactId>
-         <version>3.5.2</version>
-      </dependency>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna-platform</artifactId>
+          <version>5.13.0</version>
+      </dependency>      
       
       <!-- Dependencies required for using JAXB with java 11.
            Note that the same dependencies are now used with Java 8 since the package names
