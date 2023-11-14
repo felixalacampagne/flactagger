@@ -14,51 +14,59 @@ public class Win32APIcall
 {
 private Object K32=null; // Kernel32
 private Method mthSetThreadExecutionState = null;
+private boolean bInitFailed = false;
 private int ES_SYSTEM_REQUIRED = 1;   // com.sun.jna.platform.win32.WinBase.ES_SYSTEM_REQUIRED
 public Win32APIcall()
 {
-	initKernel32();
+   initKernel32();
 }
 
 public void initKernel32()
 {
-	
-	if(K32 != null)
-		return;
+   
+   if((K32 != null) || bInitFailed)
+      return;
 
-	try
-	{
-		Class<?> native_class = Class.forName("com.sun.jna.Native");
-		Class<?> k32_class = Class.forName("com.sun.jna.platform.win32.Kernel32");
-		Method load_method = native_class.getMethod("load", String.class, Class.class);
-		K32 = load_method.invoke(null, "kernel32", k32_class);
-		mthSetThreadExecutionState = k32_class.getMethod("SetThreadExecutionState", int.class);
-	}
-	catch(Error err)
-	{
-		err.printStackTrace();
-	}
-	catch(Exception ex)
-	{
-		ex.printStackTrace();
-	}
+   bInitFailed = true;
+   try
+   {
+      Class<?> native_class = Class.forName("com.sun.jna.Native");
+      Class<?> k32_class = Class.forName("com.sun.jna.platform.win32.Kernel32");
+      Method load_method = native_class.getMethod("load", String.class, Class.class);
+      K32 = load_method.invoke(null, "kernel32", k32_class);
+      mthSetThreadExecutionState = k32_class.getMethod("SetThreadExecutionState", int.class);
+      bInitFailed = false;
+   }
+   catch(Error err)
+   {
+      err.printStackTrace();
+   }
+   catch(NoSuchMethodException nsmex)
+   {
+      System.out.println("Win32APIcall.initKernel32: cannot access Win32 method: keep awake will not be possible");
+   }
+   catch(Exception ex)
+   {
+
+      ex.printStackTrace();
+   }
 }
-	
+   
 public boolean systemIsBusy()
 {
-	if(K32 != null)
-	{
-		try
-		{
-			mthSetThreadExecutionState.invoke(K32, ES_SYSTEM_REQUIRED);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return true;
-	}
-	return false;
+   if(mthSetThreadExecutionState != null)
+   {
+      try
+      {
+         mthSetThreadExecutionState.invoke(K32, ES_SYSTEM_REQUIRED);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+      return true;
+   }
+   return false;
 }
 
 }
